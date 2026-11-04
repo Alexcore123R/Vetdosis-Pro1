@@ -1,0 +1,214 @@
+name: Probar corte de permisos (sin despliegue)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  patient-registration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probar alta, lectura, auditoría y concurrencia en PostgreSQL aislado
+        run: bash supabase/tests/run_permission_patient_registration.sh
+  agenda:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probar agenda, agregados y concurrencia con dependencias reales
+        run: bash supabase/tests/run_permission_agenda.sh
+  clinical:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probar expediente, actuaciones y revocación profesional en aislamiento
+        run: bash supabase/tests/run_permission_clinical.sh
+  hospital-flexible:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probar ingreso sin jaula y cambios auditados en aislamiento
+        run: bash supabase/tests/run_hospital_flexible_admission.sh
+  hospital-reviews:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probar revisiones por procedimiento y confirmaciones concurrentes
+        run: bash supabase/tests/run_permission_hospital_reviews.sh
+  medication:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probar aplicación, extracción, validación y concurrencia sin despliegue
+        run: bash supabase/tests/run_permission_medication.sh
+  hospital-resolution:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probar alta revisada, dosis no aplicada y carreras con aplicaciones
+        run: bash supabase/tests/run_permission_hospital_resolution.sh
+  consultation-signature:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probar firma propia, contenido exacto, revocación y aislamiento
+        run: bash supabase/tests/run_consultation_attestation.sh
+  prescription-pdf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Preparar extracción de texto de PDF
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+      - name: Instalar dependencias fijadas del renderer
+        run: npm ci --prefix supabase
+      - name: Probar atribución, firma propia y regresiones de formatos
+        run: npm run test:renderer --prefix supabase
+  prescription-individual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Preparar comprobación del PDF generado desde PostgreSQL
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+      - name: Instalar dependencias fijadas del renderer
+        run: npm ci --prefix supabase
+      - name: Probar preparación, autorización individual, PDF y emisión concurrente
+        run: bash supabase/tests/run_prescription_individual.sh
+  prescription-standing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Preparar comprobación del PDF emitido bajo autorización previa
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+      - name: Instalar dependencias fijadas del renderer
+        run: npm ci --prefix supabase
+      - name: Probar autorización temporal, aceptación, revisión posterior y concurrencia
+        run: bash supabase/tests/run_prescription_standing.sh
+  dispensing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probar dispensación por permiso, cobro separado y concurrencia
+        run: bash supabase/tests/run_permission_dispensing.sh
+  inventory-cash:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probar permisos de catálogo, lotes, caja, fotos y concurrencia
+        run: bash supabase/tests/run_permission_inventory_cash.sh
+  controlled-reports:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Preparar comprobación del reporte PDF
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+      - name: Instalar dependencias fijadas del renderer
+        run: npm ci --prefix supabase
+      - name: Probar corte, PDF, emisión, revocación y aislamiento de reportes
+        run: bash supabase/tests/run_permission_reports.sh
+  form-templates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probar permisos de plantillas, aprobación, membrete y concurrencia
+        run: bash supabase/tests/run_permission_form_templates.sh
+  form-document-drafts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probar borradores, firma propia exacta, revocación y concurrencia
+        run: bash supabase/tests/run_permission_form_document_drafts.sh
+  form-individual-workflow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Preparar validación de PDF real con datos ficticios
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+      - name: Instalar dependencias fijadas del renderer
+        run: npm ci --prefix supabase
+      - name: Probar firmas separadas, autorización, tutor, PDF y correcciones
+        run: bash supabase/tests/run_form_individual_workflow.sh
+  clinical-screen-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probar acciones clínicas por permiso y documentos vinculados
+        run: bash supabase/tests/run_clinical_screen_contract.sh
+  independent-clinical-cases:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probar registro sin PDF, autoridad separada y concurrencia
+        run: bash supabase/tests/run_independent_clinical_cases.sh
+
+  death-attestation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probar constatación con permiso y firma propios
+        run: bash supabase/tests/run_death_attestation.sh
+
+  module-navigation-dashboard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probar navegación y consultas del dashboard por permisos
+        run: bash supabase/tests/run_module_navigation_dashboard.sh
+
+  backups-exports:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probar respaldos de clínica y personales sin restaurar
+        run: bash supabase/tests/run_permission_backups_exports.sh
+
+  workspace-management:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probar autoridad explícita de administración, IA, equipo, asistencia y cobros
+        run: bash supabase/tests/run_workspace_management_cutover.sh
+
+  restore-preview-staging:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probar recuperación segura y restauración limitada de tutores
+        run: bash supabase/tests/run_restore_preview_staging.sh

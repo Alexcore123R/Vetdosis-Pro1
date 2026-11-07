@@ -21,12 +21,21 @@ class VetCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dark = theme.brightness == Brightness.dark;
-    return Container(
-      padding: padding,
+    // El orden importa, y antes estaba mal: el Material recortaba DENTRO del
+    // padding con el radio exterior, asi que la curva de la esquina mordia la
+    // caja de contenido. El primer hijo perdia su esquina superior izquierda y
+    // «Tu agenda» se pintaba como «Íu agenda». Medido: de 26 filas de la
+    // primera linea, 24 quedaban fuera del recorte.
+    //
+    // Ahora, de fuera adentro: la sombra, que debe quedar FUERA del recorte o
+    // se corta; el recorte, sobre el borde real de la tarjeta; y dentro la
+    // superficie con su borde y el padding, que es lo que separa el contenido
+    // de las curvas. El recorte sigue existiendo para que las ondas del
+    // InkWell no se salgan, que es para lo que estaba.
+    final forma = BorderRadius.circular(radius);
+    return DecoratedBox(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
+        borderRadius: forma,
         boxShadow: [
           BoxShadow(
             color: dark ? Colors.black26 : VetColors.softShadow,
@@ -37,9 +46,17 @@ class VetCard extends StatelessWidget {
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(radius),
+        borderRadius: forma,
         clipBehavior: Clip.antiAlias,
-        child: child,
+        child: Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: forma,
+            border: Border.all(color: theme.colorScheme.outlineVariant),
+          ),
+          child: child,
+        ),
       ),
     );
   }

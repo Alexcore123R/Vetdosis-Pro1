@@ -115,13 +115,13 @@ class VetDosisBrand extends StatelessWidget {
           TextSpan(
             text: 'VetDosis ',
             style: TextStyle(
-              color: dark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8),
+              color: dark ? const Color(0xFF93C5FD) : const Color(0xFF14204E),
             ),
           ),
           TextSpan(
             text: 'Pro',
             style: TextStyle(
-              color: dark ? const Color(0xFFC5A8EF) : const Color(0xFF7C3AED),
+              color: dark ? const Color(0xFFC5A8EF) : const Color(0xFF7A4AB8),
             ),
           ),
         ],
@@ -134,7 +134,7 @@ class VetDosisBrand extends StatelessWidget {
       textAlign: TextAlign.center,
       style: TextStyle(
         fontSize: large ? 14 : 11,
-        color: dark ? const Color(0xFF93C5FD) : const Color(0xFF60A5FA),
+        color: dark ? const Color(0xFF93C5FD) : const Color(0xFF0E1B45),
       ),
     );
     if (large) {

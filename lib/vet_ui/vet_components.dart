@@ -44,14 +44,19 @@ class VetCard extends StatelessWidget {
           ),
         ],
       ),
+      // La superficie va en el propio Material, no en un Container de dentro.
+      // ListTile pinta su fondo y sus ondas sobre el Material mas cercano, asi
+      // que un color intermedio se los tapa, y el framework lo detecta
+      // (_debugCheckBackgroundIsHidden salta con cualquier DecoratedBox
+      // intermedio de color opaco). El de aqui dentro lleva solo el borde, que
+      // no cuenta como fondo.
       child: Material(
-        color: Colors.transparent,
+        color: theme.colorScheme.surface,
         borderRadius: forma,
         clipBehavior: Clip.antiAlias,
         child: Container(
           padding: padding,
           decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
             borderRadius: forma,
             border: Border.all(color: theme.colorScheme.outlineVariant),
           ),

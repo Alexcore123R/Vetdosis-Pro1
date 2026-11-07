@@ -226,23 +226,33 @@ class HomeModuleGrid extends StatelessWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          AccentGlow(
-                            color: Theme.of(context).colorScheme.primary,
-                            radius: 16,
-                            emphasis: 1,
-                            child: Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: VetColors.lavender.withValues(
-                                  alpha: .24,
+                          // Cada modulo con su tono, no todos con el mismo
+                          // lavanda y el mismo primary: asi se distinguen de
+                          // un vistazo, que es para lo que esta la cuadricula.
+                          Builder(
+                            builder: (context) {
+                              final tono = sectionAccent(actions[i].$2);
+                              final placa = _placa(context, tono);
+                              return AccentGlow(
+                                color: tono,
+                                radius: 16,
+                                emphasis: 1,
+                                child: Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: placa,
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  // Los tonos de marca son claros: sobre su
+                                  // propia placa el glifo se oscurece lo justo
+                                  // para ser legible, como en las cifras.
+                                  child: Icon(
+                                    sectionIcon(actions[i].$2),
+                                    color: readableOn(tono, placa),
+                                  ),
                                 ),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Icon(
-                                sectionIcon(actions[i].$2),
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                            ),
+                              );
+                            },
                           ),
                           const SizedBox(height: 12),
                           Text(
@@ -325,27 +335,47 @@ class HomeSummary extends StatelessWidget {
                         color: _placa(context, metric.$4),
                         borderRadius: BorderRadius.circular(18),
                       ),
+                      // Centrada y con el icono dentro de su cuadrado
+                      // redondeado, igual que los modulos de abajo: antes el
+                      // glifo iba suelto y todo alineado a la izquierda, y las
+                      // dos rejillas de Inicio no se parecian entre si.
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            metric.$3,
-                            // Los tonos de marca son claros: sobre la tarjeta
-                            // casi blanca del tema claro no se verian, asi que
-                            // el glifo se oscurece lo justo para ser legible.
-                            color: readableOn(
-                              metric.$4,
-                              _placa(context, metric.$4),
-                            ),
-                            size: 22,
+                          Builder(
+                            builder: (context) {
+                              // El glifo ya no se apoya en la placa de la
+                              // tarjeta sino en su propio cuadrado, que lleva
+                              // un paso mas de tinte. El fondo se compone
+                              // opaco sobre la placa, y la tinta se mide
+                              // contra ese fondo real: medir contra la placa
+                              // dejaba el icono por debajo de 3:1 encima del
+                              // cuadrado que de verdad tiene detras.
+                              final placa = _placa(context, metric.$4);
+                              final caja = composite(metric.$4, .18, placa);
+                              return Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: caja,
+                                  borderRadius: BorderRadius.circular(13),
+                                ),
+                                child: Icon(
+                                  metric.$3,
+                                  color: readableOn(metric.$4, caja),
+                                  size: 22,
+                                ),
+                              );
+                            },
                           ),
                           const SizedBox(height: 8),
                           Text(
                             metric.$2,
+                            textAlign: TextAlign.center,
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           Text(
                             metric.$1,
+                            textAlign: TextAlign.center,
                             style: Theme.of(
                               context,
                             ).textTheme.bodySmall?.copyWith(letterSpacing: 0),

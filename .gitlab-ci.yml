@@ -1,0 +1,116 @@
+# Traduccion de .github/workflows/build-debug-apk.yml a GitLab CI.
+#
+# GitHub Actions no corre en GitLab: los 52 workflows de .github/ viajaron con
+# el repositorio pero estan inertes. Este es el primero traducido, y es el que
+# no necesita ningun secreto de firma: solo la clave publicable del proyecto de
+# pruebas. Es el camino mas corto a un APK instalable en el telefono.
+#
+# Equivalencias con el original:
+#
+#   workflow_dispatch            -> workflow.rules, solo arranque manual (web/api)
+#   input publishable_key        -> variable de CI SUPABASE_TEST_PUBLISHABLE_KEY
+#   setup-java + flutter-action  -> imagen android-sdk + clon de Flutter fijado
+#   upload-artifact              -> artifacts, con la misma caducidad de 14 dias
+#
+# Dos diferencias deliberadas, y por que:
+#
+# 1. La version de Flutter se clona del repositorio oficial en la etiqueta
+#    exacta. ghcr.io/cirruslabs/flutter NO publica 3.47.6 (su etiqueta numerica
+#    mas alta es 3.44), y usar :stable dejaria la version a la deriva, que es
+#    justo lo que el CI de GitHub fijaba a proposito. Comprobado consultando el
+#    registro, no supuesto.
+#
+# 2. La validacion de la clave esta en shell con curl, no en Python. El original
+#    usaba python3 inline; aqui no se puede dar por hecho que la imagen lo
+#    traiga. La logica es la misma: exige el prefijo sb_publishable_ y pregunta
+#    al servidor antes de compilar, para no entregar un APK que no puede
+#    autenticar.
+#
+# NO EJECUTADO. No hay runner de GitLab ni Docker en el entorno donde se
+# escribio, asi que la primera ejecucion real es la primera prueba de verdad.
+# Lo comprobado sin runner queda anotado en el commit.
+
+stages:
+  - build
+
+variables:
+  FLUTTER_VERSION: '3.47.6'
+  FLUTTER_HOME: '$CI_PROJECT_DIR/.flutter'
+  PUB_CACHE: '$CI_PROJECT_DIR/.pub-cache'
+  SUPABASE_TEST_URL: 'https://wtrelwtztkddfktrfdpb.supabase.co'
+  GIT_DEPTH: '50'
+
+# Solo a mano, como el workflow_dispatch del original. Sin esto cada empuje
+# lanzaria una compilacion de Android de casi una hora.
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'web'
+    - if: $CI_PIPELINE_SOURCE == 'api'
+    - when: never
+
+apk-depuracion:
+  stage: build
+  # compileSdk del proyecto es maxOf(36, ...), de android/app/build.gradle.kts.
+  image: ghcr.io/cirruslabs/android-sdk:36
+  timeout: 45m
+  cache:
+    key: 'flutter-$FLUTTER_VERSION'
+    paths:
+      - .flutter
+      - .pub-cache
+  before_script:
+    - command -v curl >/dev/null || (apt-get update -qq && apt-get install -y -qq curl ca-certificates)
+    - |
+      if [ ! -x "$FLUTTER_HOME/bin/flutter" ]; then
+        git clone --depth 1 --branch "$FLUTTER_VERSION" \
+          https://github.com/flutter/flutter.git "$FLUTTER_HOME"
+      fi
+    - export PATH="$FLUTTER_HOME/bin:$PATH"
+    - git config --global --add safe.directory "$FLUTTER_HOME"
+    - flutter --version
+  script:
+    - export PATH="$FLUTTER_HOME/bin:$PATH"
+    # La clave no se imprime en ningun momento.
+    - |
+      set +x
+      if [ -z "${SUPABASE_TEST_PUBLISHABLE_KEY:-}" ]; then
+        echo 'Falta la variable SUPABASE_TEST_PUBLISHABLE_KEY.' >&2
+        echo 'Se pone en Settings > CI/CD > Variables, o al lanzar la' >&2
+        echo 'tuberia a mano en Run pipeline.' >&2
+        exit 1
+      fi
+      clave=$(printf '%s' "$SUPABASE_TEST_PUBLISHABLE_KEY" | tr -d '[:space:]')
+      case "$clave" in
+        sb_publishable_*) ;;
+        *) echo 'Se requiere una clave publicable de Supabase (sb_publishable_).' >&2; exit 1 ;;
+      esac
+      codigo=$(curl -sS -o /dev/null -w '%{http_code}' \
+        -H "apikey: $clave" "$SUPABASE_TEST_URL/auth/v1/settings")
+      if [ "$codigo" != '200' ]; then
+        echo "El servidor rechazo la clave publicable (HTTP $codigo)." >&2
+        echo 'Copia la clave sb_publishable_ vigente del proyecto de pruebas' >&2
+        echo 'en Supabase: Settings > API Keys.' >&2
+        exit 1
+      fi
+      mkdir -p supabase
+      printf '{"SUPABASE_URL":"%s","SUPABASE_PUBLISHABLE_KEY":"%s","SUPABASE_EXISTING_SCHEMA":true,"SUPABASE_GOOGLE_ENABLED":false}' \
+        "$SUPABASE_TEST_URL" "$clave" > supabase/config.test.local.json
+      echo 'Clave validada contra el servidor; configuracion de pruebas escrita.'
+    - flutter pub get
+    - flutter analyze
+    - flutter test --timeout 5m
+    - >
+      flutter build apk --debug --flavor beta
+      --target-platform android-arm64
+      --dart-define=APP_CHANNEL=beta
+      --dart-define-from-file=supabase/config.test.local.json
+  after_script:
+    # El archivo lleva la clave: no debe sobrevivir al trabajo ni viajar en el
+    # artefacto. Se borra tambien si la compilacion falla.
+    - rm -f -- supabase/config.test.local.json
+  artifacts:
+    name: vetdosis-pruebas-debug-arm64
+    when: on_success
+    expire_in: 14 days
+    paths:
+      - build/app/outputs/flutter-apk/app-beta-debug.apk

@@ -1,5 +1,7 @@
 import '../../../core/widgets/accent_glow.dart';
 import 'package:flutter/material.dart';
+import '../../../vet_ui/vet_components.dart';
+import '../../../vet_ui/vet_theme.dart';
 import 'growth_panel.dart';
 import 'feeding_panel.dart';
 import '../../aviculture/presentation/aviculture_screen.dart';
@@ -92,35 +94,81 @@ class _ProductionMenuState extends State<ProductionMenu> {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      Text(
-        'Producción y grandes especies',
-        style: Theme.of(context).textTheme.headlineSmall,
-      ),
-      if (species == null) ...[
-        const Text(
+      if (species == null) ..._speciesList(context) else ..._detail(context),
+    ],
+  );
+
+  List<Widget> _speciesList(BuildContext context) => [
+    const VetSectionHeader(
+      title: 'Producción y grandes especies',
+      subtitle:
           'Elige una especie o grupo. La clínica y tus permisos se conservan.',
+      large: true,
+    ),
+    for (final entry in productionSpecies.entries)
+      Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: _SpeciesCard(
+          name: entry.key,
+          summary: entry.value.join(' · '),
+          badges: _speciesBadges(entry.key),
+          onTap: () => setState(() {
+            species = entry.key;
+            activity = null;
+          }),
         ),
-        const SizedBox(height: 12),
-        for (final entry in productionSpecies.entries)
-          ListTile(
-            title: Text(entry.key),
-            subtitle: Text(
-              entry.key == 'Peces'
-                  ? 'Calculadora de biomasa y ración · registros en preparación'
-                  : entry.key == 'Porcinos'
-                  ? 'Calculadora de crecimiento y engorda · registros en preparación'
-                  : entry.key == 'Aves'
-                  ? 'Herramientas de capacidad e incubación disponibles según acceso'
-                  : 'Organización de actividades · registros específicos en preparación',
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => setState(() {
-              species = entry.key;
-              activity = null;
-            }),
-          ),
-      ] else ...[
-        TextButton.icon(
+      ),
+  ];
+
+  List<Widget> _speciesBadges(String name) => switch (name) {
+    'Peces' => const [
+      VetStatusBadge(
+        label: 'Calculadora de biomasa y ración',
+        kind: VetBadgeKind.success,
+      ),
+      VetStatusBadge(
+        label: 'Registros en preparación',
+        kind: VetBadgeKind.unverified,
+      ),
+    ],
+    'Porcinos' => const [
+      VetStatusBadge(
+        label: 'Calculadora de crecimiento y engorda',
+        kind: VetBadgeKind.success,
+      ),
+      VetStatusBadge(
+        label: 'Registros en preparación',
+        kind: VetBadgeKind.unverified,
+      ),
+    ],
+    'Aves' => const [
+      VetStatusBadge(
+        label: 'Capacidad e incubación según acceso',
+        kind: VetBadgeKind.success,
+      ),
+    ],
+    _ => const [
+      VetStatusBadge(label: 'Organización de actividades'),
+      VetStatusBadge(
+        label: 'Registros en preparación',
+        kind: VetBadgeKind.unverified,
+      ),
+    ],
+  };
+
+  List<Widget> _detail(BuildContext context) {
+    final (icon, accent) = speciesVisual(species!);
+    final textTheme = Theme.of(context).textTheme;
+    final activities = productionSpecies[species]!;
+    const denied = VetNotice(
+      text: 'Las calculadoras no están habilitadas para tu acceso actual.',
+      icon: Icons.lock_outline,
+      kind: VetBadgeKind.warning,
+    );
+    return [
+      Align(
+        alignment: Alignment.centerLeft,
+        child: TextButton.icon(
           onPressed: () => setState(() {
             species = null;
             activity = null;
@@ -128,99 +176,223 @@ class _ProductionMenuState extends State<ProductionMenu> {
           icon: const Icon(Icons.arrow_back),
           label: const Text('Volver a especies'),
         ),
-        Text(species!, style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
+      ),
+      const SizedBox(height: 4),
+      VetCard(
+        child: Row(
           children: [
-            for (final name in productionSpecies[species]!)
-              glowChip(ChoiceChip(
-                label: Text(name),
-                selected: activity == name,
-                onSelected: (_) => setState(() => activity = name),
-              )),
+            VetIconBox(icon: icon, accent: accent, size: 56),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(species!, style: textTheme.titleLarge),
+                  const SizedBox(height: 2),
+                  Text(
+                    activities.length == 1
+                        ? '1 actividad'
+                        : '${activities.length} actividades',
+                    style: textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
-        if (species == 'Aves' && activity != null) ...[
-          const SizedBox(height: 16),
-          if (allowed('Cálculos clínicos') && activity == 'Postura')
-            OutlinedButton.icon(
-              icon: const Icon(Icons.agriculture_outlined),
-              label: const Text('Capacidad e instalaciones avícolas'),
+      ),
+      const SizedBox(height: 16),
+      VetCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Actividad', style: textTheme.titleSmall),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final name in activities)
+                  glowChip(ChoiceChip(
+                    label: Text(name),
+                    selected: activity == name,
+                    onSelected: (_) => setState(() => activity = name),
+                  )),
+              ],
+            ),
+          ],
+        ),
+      ),
+      if (activity == null)
+        const Padding(
+          padding: EdgeInsets.only(top: 12),
+          child: VetNotice(
+            text: 'Elige una actividad para ver sus herramientas.',
+            icon: Icons.touch_app_outlined,
+          ),
+        ),
+      if (species == 'Aves' && activity != null) ...[
+        const SizedBox(height: 16),
+        if (allowed('Cálculos clínicos') && activity == 'Postura')
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: VetActionButton(
+              icon: Icons.agriculture_outlined,
+              label: 'Capacidad e instalaciones avícolas',
               onPressed: () => open(const AvicultureScreen()),
             ),
-          if (allowed('Cálculos clínicos') &&
-              activity == 'Reproducción e incubación')
-            OutlinedButton.icon(
-              icon: const Icon(Icons.egg_outlined),
-              label: const Text('Abrir herramientas de incubación'),
+          ),
+        if (allowed('Cálculos clínicos') &&
+            activity == 'Reproducción e incubación')
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: VetActionButton(
+              icon: Icons.egg_outlined,
+              label: 'Abrir herramientas de incubación',
               onPressed: () => open(const IncubationScreen()),
             ),
-          if (!allowed('Cálculos clínicos'))
-            const Text(
-              'Las calculadoras no están habilitadas para tu acceso actual.',
-            ),
-          if (activity == 'Engorda')
-            const Text(
-              'Las herramientas específicas de engorda están en preparación. Las tablas actuales de postura no se aplican automáticamente a engorda.',
-            ),
-          if (activity != 'Engorda')
-            const Text(
-              'Las herramientas conservan sus referencias y avisos de datos sin verificar.',
-            ),
-        ],
-        if (species == 'Peces' && activity == 'Tilapia') ...[
-          const SizedBox(height: 16),
-          if (allowed('Cálculos clínicos'))
-            const FeedingPanel()
-          else
-            const Text(
-              'Las calculadoras no están habilitadas para tu acceso actual.',
-            ),
-        ],
-        if (species == 'Porcinos' && activity == 'Crecimiento y engorda') ...[
-          const SizedBox(height: 16),
-          if (allowed('Cálculos clínicos'))
-            GrowthPanel(showCosts: allowed('Planeación financiera'))
-          else
-            const Text(
-              'Las calculadoras no están habilitadas para tu acceso actual.',
-            ),
-        ],
-        const SizedBox(height: 20),
-        Text(
-          'Apartados previstos',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        const Text(
-          'Estos registros específicos están en preparación; aún no permiten guardar datos de unidades o lotes.',
-        ),
-        for (final name in plannedProductionAreas[species]!)
-          ListTile(
-            leading: const Icon(Icons.schedule),
-            title: Text(name),
-            subtitle: const Text('En preparación'),
           ),
-        const SizedBox(height: 16),
-        Text(
-          'Herramientas del espacio',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        const Text(
-          'Abren los registros actuales de tu espacio; todavía no aplican un filtro por la especie seleccionada.',
-        ),
-        for (final (label, page) in [
-          ('Pacientes individuales', 'Pacientes'),
-          ('Agenda del espacio', 'Agenda'),
-          ('Inventario del espacio', 'Inventario'),
-        ])
-          if (allowed(page))
-            TextButton(
-              onPressed: () => widget.onNavigate(page),
-              child: Text(label),
-            ),
+        if (!allowed('Cálculos clínicos')) denied,
+        if (activity == 'Engorda')
+          const VetNotice(
+            text:
+                'Las herramientas específicas de engorda están en preparación. Las tablas actuales de postura no se aplican automáticamente a engorda.',
+            icon: Icons.schedule,
+            kind: VetBadgeKind.warning,
+          ),
+        if (activity != 'Engorda')
+          const VetNotice(
+            text:
+                'Las herramientas conservan sus referencias y avisos de datos sin verificar.',
+            icon: Icons.fact_check_outlined,
+          ),
       ],
-    ],
-  );
+      if (species == 'Peces' && activity == 'Tilapia') ...[
+        const SizedBox(height: 16),
+        if (allowed('Cálculos clínicos')) const FeedingPanel() else denied,
+      ],
+      if (species == 'Porcinos' && activity == 'Crecimiento y engorda') ...[
+        const SizedBox(height: 16),
+        if (allowed('Cálculos clínicos'))
+          GrowthPanel(showCosts: allowed('Planeación financiera'))
+        else
+          denied,
+      ],
+      const SizedBox(height: 24),
+      const VetSectionHeader(
+        title: 'Apartados previstos',
+        subtitle:
+            'Estos registros específicos están en preparación; aún no permiten guardar datos de unidades o lotes.',
+      ),
+      for (final name in plannedProductionAreas[species]!)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: VetCard(
+            padding: EdgeInsets.zero,
+            radius: 18,
+            child: ListTile(
+              leading: VetIconBox(
+                icon: Icons.schedule,
+                accent: accent,
+                size: 40,
+              ),
+              title: Text(name),
+              trailing: const VetStatusBadge(
+                label: 'En preparación',
+                kind: VetBadgeKind.unverified,
+              ),
+            ),
+          ),
+        ),
+      const SizedBox(height: 16),
+      const VetSectionHeader(
+        title: 'Herramientas del espacio',
+        subtitle:
+            'Abren los registros actuales de tu espacio; todavía no aplican un filtro por la especie seleccionada.',
+      ),
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final (label, page, toolIcon) in [
+            ('Pacientes individuales', 'Pacientes', Icons.pets_outlined),
+            ('Agenda del espacio', 'Agenda', Icons.calendar_month_outlined),
+            ('Inventario del espacio', 'Inventario', Icons.inventory_2_outlined),
+          ])
+            if (allowed(page))
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: VetModuleTile(
+                    title: label,
+                    icon: toolIcon,
+                    accent: VetColors.violet,
+                    onTap: () => widget.onNavigate(page),
+                  ),
+                ),
+              ),
+        ],
+      ),
+    ];
+  }
+}
+
+/// Ícono y color de acento de cada especie, solo presentación.
+(IconData, Color) speciesVisual(String name) => switch (name) {
+  'Bovinos' => (Icons.grass, VetColors.turquoise),
+  'Ovinos / caprinos' => (Icons.landscape_outlined, VetColors.violet),
+  'Aves' => (Icons.egg_outlined, VetColors.warning),
+  'Peces' => (Icons.set_meal_outlined, VetColors.cyan),
+  'Abejas' => (Icons.hive_outlined, VetColors.warning),
+  'Porcinos' => (Icons.savings_outlined, VetColors.pink),
+  'Equinos' => (Icons.directions_run, VetColors.purpleDeep),
+  _ => (Icons.pets_outlined, VetColors.turquoise),
+};
+
+class _SpeciesCard extends StatelessWidget {
+  const _SpeciesCard({
+    required this.name,
+    required this.summary,
+    required this.badges,
+    required this.onTap,
+  });
+  final String name, summary;
+  final List<Widget> badges;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) {
+    final (icon, accent) = speciesVisual(name);
+    final textTheme = Theme.of(context).textTheme;
+    return VetCard(
+      padding: EdgeInsets.zero,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              VetIconBox(icon: icon, accent: accent, size: 52),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(name, style: textTheme.titleMedium),
+                    const SizedBox(height: 2),
+                    Text(summary, style: textTheme.bodySmall),
+                    const SizedBox(height: 10),
+                    Wrap(spacing: 6, runSpacing: 6, children: badges),
+                  ],
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.only(top: 14),
+                child: Icon(Icons.chevron_right, color: VetColors.muted),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

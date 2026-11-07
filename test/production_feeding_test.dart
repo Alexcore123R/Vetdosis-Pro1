@@ -102,6 +102,10 @@ void main() {
     await tester.ensureVisible(find.text('Porcinos'));
     await tester.tap(find.text('Porcinos'));
     await tester.pumpAndSettle();
+    // La ficha de la especie y la tarjeta de actividad hacen el detalle mas
+    // alto, asi que el chip queda fuera de pantalla tras el desplazamiento
+    // anterior. Se desplaza hasta el, igual que con «Porcinos» arriba.
+    await tester.ensureVisible(find.text('Crecimiento y engorda'));
     await tester.tap(find.text('Crecimiento y engorda'));
     await tester.pumpAndSettle();
     expect(find.byType(GrowthPanel), findsNothing);

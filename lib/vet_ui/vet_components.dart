@@ -344,3 +344,105 @@ class VetKpiCard extends StatelessWidget {
     ),
   );
 }
+
+/// Cuadro tintado con ícono para el icono de un módulo, sección o especie.
+class VetIconBox extends StatelessWidget {
+  const VetIconBox({
+    super.key,
+    required this.icon,
+    this.accent = VetColors.turquoise,
+    this.size = 44,
+  });
+  final IconData icon;
+  final Color accent;
+  final double size;
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      color: accent.withValues(alpha: .15),
+      borderRadius: BorderRadius.circular(size * .32),
+    ),
+    child: Icon(icon, color: accent, size: size * .52),
+  );
+}
+
+/// Título de pantalla o de bloque con una línea de apoyo opcional.
+class VetSectionHeader extends StatelessWidget {
+  const VetSectionHeader({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.large = false,
+  });
+  final String title;
+  final String? subtitle;
+  final bool large;
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: large ? textTheme.headlineSmall : textTheme.titleMedium,
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              subtitle!,
+              style: textTheme.bodyMedium?.copyWith(color: VetColors.muted),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Aviso con ícono para notas de contexto, límites o accesos no habilitados.
+class VetNotice extends StatelessWidget {
+  const VetNotice({
+    super.key,
+    required this.text,
+    this.icon = Icons.info_outline,
+    this.kind = VetBadgeKind.information,
+  });
+  final String text;
+  final IconData icon;
+  final VetBadgeKind kind;
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final color = switch (kind) {
+      VetBadgeKind.information => scheme.primary,
+      VetBadgeKind.success => VetColors.success,
+      VetBadgeKind.warning => VetColors.warning,
+      VetBadgeKind.danger => scheme.error,
+      VetBadgeKind.unverified => scheme.onSurfaceVariant,
+    };
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: .22)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(text, style: Theme.of(context).textTheme.bodyMedium),
+          ),
+        ],
+      ),
+    );
+  }
+}

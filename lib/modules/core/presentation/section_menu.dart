@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/widgets/workspace_panel.dart';
+import '../../../vet_ui/vet_components.dart';
+import '../../../vet_ui/vet_theme.dart';
 import '../../auth/domain/clinic_membership.dart';
 import '../domain/module_access.dart';
 import '../../clinic_experience/domain/clinic_experience.dart';
@@ -53,9 +55,11 @@ class _SectionMenuState extends State<SectionMenu> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Secciones', style: Theme.of(context).textTheme.headlineSmall),
-        const Text('Herramientas y gestión de tu espacio.'),
-        const SizedBox(height: 16),
+        const VetSectionHeader(
+          title: 'Secciones',
+          subtitle: 'Herramientas y gestión de tu espacio.',
+          large: true,
+        ),
         TextField(
           decoration: const InputDecoration(
             labelText: 'Buscar secciones',
@@ -63,37 +67,90 @@ class _SectionMenuState extends State<SectionMenu> {
           ),
           onChanged: (value) => setState(() => query = normalizeSection(value)),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         if (filtered.isEmpty)
-          const Text('No hay secciones disponibles para esa búsqueda.'),
-        for (final group in filtered)
-          ExpansionTile(
-            key: ValueKey((group.title, query, widget.initialGroup)),
-            title: Text(group.title),
-            initiallyExpanded:
-                query.isNotEmpty || widget.initialGroup == group.title,
-            children: [
-              for (final page in group.planned)
-                ListTile(
-                  leading: const Icon(Icons.schedule),
-                  title: Text(page),
-                  subtitle: const Text('En preparación'),
-                  enabled: false,
+          const VetNotice(
+            text: 'No hay secciones disponibles para esa búsqueda.',
+            icon: Icons.search_off,
+          ),
+        for (final (index, group) in filtered.indexed)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: VetCard(
+              padding: EdgeInsets.zero,
+              child: Theme(
+                data: Theme.of(
+                  context,
+                ).copyWith(dividerColor: Colors.transparent),
+                child: ExpansionTile(
+                  key: ValueKey((group.title, query, widget.initialGroup)),
+                  leading: VetIconBox(
+                    icon: group.pages.isNotEmpty
+                        ? sectionIcon(group.pages.first)
+                        : Icons.schedule,
+                    accent: _groupAccents[index % _groupAccents.length],
+                  ),
+                  title: Text(
+                    group.title,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  subtitle: Text(
+                    '${group.pages.length + group.planned.length} secciones',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  initiallyExpanded:
+                      query.isNotEmpty || widget.initialGroup == group.title,
+                  childrenPadding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+                  children: [
+                    for (final page in group.planned)
+                      ListTile(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        leading: const Icon(Icons.schedule),
+                        title: Text(page),
+                        trailing: const VetStatusBadge(
+                          label: 'En preparación',
+                          kind: VetBadgeKind.unverified,
+                        ),
+                        enabled: false,
+                      ),
+                    for (final page in group.pages)
+                      ListTile(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        leading: Icon(
+                          sectionIcon(page),
+                          color: _groupAccents[index % _groupAccents.length],
+                        ),
+                        title: Text(page),
+                        trailing: const Icon(
+                          Icons.chevron_right,
+                          color: VetColors.muted,
+                        ),
+                        onTap: page == 'Mi cuenta y clínicas'
+                            ? widget.onAccount
+                            : () => widget.onNavigate(page),
+                      ),
+                  ],
                 ),
-              for (final page in group.pages)
-                ListTile(
-                  leading: Icon(sectionIcon(page)),
-                  title: Text(page),
-                  onTap: page == 'Mi cuenta y clínicas'
-                      ? widget.onAccount
-                      : () => widget.onNavigate(page),
-                ),
-            ],
+              ),
+            ),
           ),
       ],
     );
   }
 }
+
+const _groupAccents = [
+  VetColors.turquoise,
+  VetColors.violet,
+  VetColors.pink,
+  VetColors.purple,
+  VetColors.cyan,
+  VetColors.lilac,
+];
 
 class CalculationMenu extends StatelessWidget {
   const CalculationMenu({
@@ -116,15 +173,19 @@ class CalculationMenu extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Calculadoras', style: Theme.of(context).textTheme.headlineSmall),
-        const Text('Elige la operación que necesitas.'),
-        const SizedBox(height: 12),
-        if (experience?.visible('Vademécum') ?? true) _CalculationChoice(
-          icon: Icons.menu_book_outlined,
-          title: 'Vademécum',
-          description: 'Consulta fichas de la app, compartidas con la clínica y personales.',
-          onTap: () => onNavigate('Vademécum'),
+        const VetSectionHeader(
+          title: 'Calculadoras',
+          subtitle: 'Elige la operación que necesitas.',
+          large: true,
         ),
+        if (experience?.visible('Vademécum') ?? true)
+          _CalculationChoice(
+            icon: Icons.menu_book_outlined,
+            title: 'Vademécum',
+            description:
+                'Consulta fichas de la app, compartidas con la clínica y personales.',
+            onTap: () => onNavigate('Vademécum'),
+          ),
         if (canDose)
           _CalculationChoice(
             icon: Icons.medication_outlined,
@@ -167,13 +228,40 @@ class _CalculationChoice extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Card(
-    child: ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      subtitle: Text(description),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: onTap,
-    ),
-  );
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: VetCard(
+        padding: EdgeInsets.zero,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                VetIconBox(icon: icon, accent: VetColors.violet, size: 48),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: textTheme.titleMedium),
+                      const SizedBox(height: 4),
+                      Text(description, style: textTheme.bodySmall),
+                    ],
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.only(top: 12),
+                  child: Icon(Icons.chevron_right, color: VetColors.muted),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

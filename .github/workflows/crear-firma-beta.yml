@@ -1,0 +1,121 @@
+name: Crear firma beta (una sola vez)
+
+# Alternativa a scripts/android/create_signing.py cuando no hay terminal
+# propia disponible (ver docs/a1-instalador-beta.md). Reutiliza ese mismo
+# script: no duplica la generacion de la llave.
+#
+# No imprime credenciales. El unico archivo que publica es la copia cifrada
+# con GPG; los .txt con valores en claro se borran dentro del runner.
+#
+# Requiere dos secretos creados a mano antes de ejecutarlo:
+#   SIGNING_BACKUP_PASSPHRASE  contrasena de la copia cifrada (>= 16 caracteres)
+#   SIGNING_BOOTSTRAP_TOKEN    PAT con permiso de escritura en Secrets y Variables
+# Borrar ambos despues de la ejecucion: la contrasena de recuperacion no debe
+# quedar guardada junto a la copia que protege.
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmacion:
+        description: 'Escribe CREAR FIRMA para confirmar'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vetdosis-crear-firma
+  cancel-in-progress: false
+
+jobs:
+  crear:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Confirmar intencion
+        env:
+          CONFIRMACION: ${{ inputs.confirmacion }}
+        run: |
+          if [ "$CONFIRMACION" != "CREAR FIRMA" ]; then
+            echo 'Confirmacion incorrecta; no se creo ninguna llave.' >&2
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Comprobar que no exista ya una identidad de firma
+        env:
+          GH_TOKEN: ${{ secrets.SIGNING_BOOTSTRAP_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo 'Falta el secreto SIGNING_BOOTSTRAP_TOKEN.' >&2
+            exit 1
+          fi
+          existentes=$(gh api "repos/$GITHUB_REPOSITORY/actions/secrets" \
+            --jq '[.secrets[].name | select(startswith("ANDROID_BETA_"))] | length')
+          if [ "$existentes" != "0" ]; then
+            echo "Ya hay $existentes secretos ANDROID_BETA_* configurados." >&2
+            echo 'No se reemplaza una identidad existente: recupera su copia cifrada.' >&2
+            echo 'Si de verdad quieres otra identidad, borralos a mano primero.' >&2
+            exit 1
+          fi
+
+      - name: Crear identidad de firma
+        env:
+          VETDOSIS_BACKUP_PASSPHRASE: ${{ secrets.SIGNING_BACKUP_PASSPHRASE }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import sys
+          sys.path.insert(0, 'scripts/android')
+          from create_signing import create
+          passphrase = os.environ.get('VETDOSIS_BACKUP_PASSPHRASE', '')
+          if not passphrase:
+              raise SystemExit('Falta el secreto SIGNING_BACKUP_PASSPHRASE.')
+          try:
+              fingerprint = create('.signing', passphrase)
+          except (ValueError, RuntimeError, OSError) as error:
+              raise SystemExit(str(error)) from None
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as handle:
+              handle.write('Huella publica SHA-256: `%s`\n' % fingerprint)
+          print('Identidad creada y copia cifrada verificada; no se muestran credenciales.')
+          PY
+
+      - name: Guardar secretos y huella en el repositorio
+        env:
+          GH_TOKEN: ${{ secrets.SIGNING_BOOTSTRAP_TOKEN }}
+        run: |
+          for nombre in ANDROID_BETA_KEYSTORE_BASE64 ANDROID_BETA_STORE_PASSWORD \
+                        ANDROID_BETA_KEY_ALIAS ANDROID_BETA_KEY_PASSWORD; do
+            gh secret set "$nombre" --repo "$GITHUB_REPOSITORY" < ".signing/$nombre.txt"
+            echo "guardado $nombre"
+          done
+          gh variable set ANDROID_BETA_CERT_SHA256 --repo "$GITHUB_REPOSITORY" \
+            < .signing/ANDROID_BETA_CERT_SHA256.txt
+          echo 'guardada la huella publica'
+
+      - name: Retirar los valores en claro antes de publicar nada
+        run: |
+          rm -f -- .signing/ANDROID_BETA_*.txt
+          ls -A .signing
+
+      - name: Publicar solo la copia cifrada
+        uses: actions/upload-artifact@v4
+        with:
+          name: vetdosis-beta-signing-backup
+          path: .signing/vetdosis-beta.signing-backup.gpg
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Limpiar material de firma
+        if: always()
+        run: rm -rf -- .signing

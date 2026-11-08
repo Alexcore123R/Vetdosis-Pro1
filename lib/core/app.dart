@@ -211,6 +211,11 @@ class VetDosisApp extends StatelessWidget {
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
+      // Hasta aqui el tema vivo no pasaba escala tipografica, asi que toda la
+      // app corria con la de Material 3, donde un titulo pesa lo mismo que su
+      // parrafo. Es la causa de que Caja y Formatos se lean como un muro de
+      // texto. La escala es la misma que usa VetTheme, en un solo sitio.
+      textTheme: VetTheme.textTheme(brightness, scheme),
       scaffoldBackgroundColor: neumorphic ? background : null,
       appBarTheme: neumorphic
           ? AppBarTheme(

@@ -81,28 +81,59 @@ class LabResult {
     return double.parse(text);
   }
 
-  /// Busca un rango de la misma especie y analito; solo lo aplica si la
-  /// unidad coincide.
-  LabFlag evaluate(String species, List<LabReferenceRange> ranges) {
+  /// Una lectura del valor contra UN rango, con el rango que la produjo.
+  ///
+  /// [range] es nulo cuando no hubo contra que leer: sin rango de la especie
+  /// o con la unidad distinta.
+  ///
+  /// Lee contra CADA rango que aplica, sin juntarlos.
+  ///
+  /// Antes, con dos fuentes para el mismo analito y unidad, se tomaba el
+  /// rango mas amplio: el minimo de los minimos y el maximo de los maximos.
+  /// Eso decide por el veterinario y ademas en la direccion permisiva, un
+  /// valor que una fuente llama bajo se presentaba como normal, y la union
+  /// de los dos rangos no es un rango que ninguna fuente publique. Por
+  /// indicacion de Ale: se muestran los dos datos con su referencia y el
+  /// profesional elige. Es la misma regla que ya siguen las referencias
+  /// porcinas con la lactancia de 21 y 28 dias.
+  List<LabReading> readings(String species, List<LabReferenceRange> ranges) {
     final matches = [
       for (final r in ranges)
         if (_norm(r.analyteKey) == _norm(analyteKey) &&
             _norm(r.species) == _norm(species))
           r,
     ];
-    if (matches.isEmpty) return LabFlag.noReference;
+    if (matches.isEmpty) {
+      return const [LabReading(flag: LabFlag.noReference)];
+    }
     final sameUnit = [
       for (final r in matches)
         if (_norm(r.unit) == _norm(unit)) r,
     ];
-    if (sameUnit.isEmpty) return LabFlag.unitMismatch;
-    // Con varias fuentes para la misma unidad se usa el rango más amplio:
-    // la lectura no marca como anormal lo que una fuente acepta.
-    final low = sameUnit.map((r) => r.low).reduce((a, b) => a < b ? a : b);
-    final high = sameUnit.map((r) => r.high).reduce((a, b) => a > b ? a : b);
-    if (value < low) return LabFlag.below;
-    if (value > high) return LabFlag.above;
-    return LabFlag.withinRange;
+    if (sameUnit.isEmpty) {
+      return const [LabReading(flag: LabFlag.unitMismatch)];
+    }
+    return [
+      for (final r in sameUnit)
+        LabReading(
+          flag: value < r.low
+              ? LabFlag.below
+              : value > r.high
+              ? LabFlag.above
+              : LabFlag.withinRange,
+          range: r,
+        ),
+    ];
+  }
+
+  /// La lectura unica, SOLO si todas las fuentes coinciden; nulo si no.
+  ///
+  /// Nulo no es un fallo: significa que las fuentes no dicen lo mismo y que
+  /// la pantalla debe mostrarlas todas en vez de resumirlas.
+  LabFlag? agreedFlag(String species, List<LabReferenceRange> ranges) {
+    final all = readings(species, ranges);
+    final first = all.first.flag;
+    return all.every((r) => r.flag == first) ? first : null;
   }
 
   /// Fuentes de los rangos aplicados, para mostrarlas junto al resultado.
@@ -113,6 +144,18 @@ class LabResult {
           _norm(r.unit) == _norm(unit))
         r.source,
   ];
+}
+
+/// Lo que una fuente dice de un valor: su juicio y el rango que lo produjo.
+class LabReading {
+  const LabReading({required this.flag, this.range});
+  final LabFlag flag;
+
+  /// Nulo cuando no hubo rango contra que leer.
+  final LabReferenceRange? range;
+
+  bool get judged =>
+      flag != LabFlag.noReference && flag != LabFlag.unitMismatch;
 }
 
 /// Conjunto de resultados de una misma toma de muestra.
@@ -137,12 +180,20 @@ class LabPanel {
   final DateTime collectedAt;
   final List<LabResult> results;
 
-  Map<String, LabFlag> evaluate(List<LabReferenceRange> ranges) => {
-    for (final r in results) r.analyteKey: r.evaluate(species, ranges),
+  /// Todas las lecturas de cada analito: una por fuente que aplique.
+  Map<String, List<LabReading>> evaluate(List<LabReferenceRange> ranges) => {
+    for (final r in results) r.analyteKey: r.readings(species, ranges),
   };
 
   /// Cuántos resultados quedaron sin juicio por falta de rango o de unidad.
-  int unjudged(List<LabReferenceRange> ranges) => evaluate(ranges).values
-      .where((f) => f == LabFlag.noReference || f == LabFlag.unitMismatch)
-      .length;
+  int unjudged(List<LabReferenceRange> ranges) => evaluate(
+    ranges,
+  ).values.where((lecturas) => !lecturas.any((l) => l.judged)).length;
+
+  /// Analitos cuyas fuentes no dicen lo mismo. La pantalla debe mostrarlos
+  /// con las dos lecturas y su referencia, para que el profesional elija.
+  List<String> disputed(List<LabReferenceRange> ranges) => [
+    for (final r in results)
+      if (r.agreedFlag(species, ranges) == null) r.analyteKey,
+  ];
 }

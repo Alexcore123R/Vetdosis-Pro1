@@ -24,37 +24,55 @@ void main() {
   group('Lectura contra rango', () {
     final ranges = [range()];
     test('dentro, debajo, arriba y límites incluidos', () {
-      expect(result(45).evaluate('Canino', ranges), LabFlag.withinRange);
-      expect(result(37).evaluate('Canino', ranges), LabFlag.withinRange);
-      expect(result(55).evaluate('Canino', ranges), LabFlag.withinRange);
-      expect(result(36.9).evaluate('Canino', ranges), LabFlag.below);
-      expect(result(55.1).evaluate('Canino', ranges), LabFlag.above);
+      expect(result(45).agreedFlag('Canino', ranges), LabFlag.withinRange);
+      expect(result(37).agreedFlag('Canino', ranges), LabFlag.withinRange);
+      expect(result(55).agreedFlag('Canino', ranges), LabFlag.withinRange);
+      expect(result(36.9).agreedFlag('Canino', ranges), LabFlag.below);
+      expect(result(55.1).agreedFlag('Canino', ranges), LabFlag.above);
     });
 
     test('sin rango para la especie no se juzga', () {
-      expect(result(10).evaluate('Felino', ranges), LabFlag.noReference);
-      expect(result(10).evaluate('Canino', const []), LabFlag.noReference);
+      expect(result(10).agreedFlag('Felino', ranges), LabFlag.noReference);
+      expect(result(10).agreedFlag('Canino', const []), LabFlag.noReference);
     });
 
     test('unidad distinta no se convierte ni se juzga', () {
       expect(
-        result(0.45, unit: 'L/L').evaluate('Canino', ranges),
+        result(0.45, unit: 'L/L').agreedFlag('Canino', ranges),
         LabFlag.unitMismatch,
       );
     });
 
     test('mayúsculas y espacios no cambian la coincidencia', () {
       expect(
-        result(45, key: ' Hematocrito ').evaluate(' canino', ranges),
+        result(45, key: ' Hematocrito ').agreedFlag(' canino', ranges),
         LabFlag.withinRange,
       );
     });
 
-    test('dos fuentes: se usa el rango más amplio', () {
-      final two = [range(low: 37, high: 55), range(low: 35, high: 57, source: 'Otra')];
-      expect(result(36).evaluate('Canino', two), LabFlag.withinRange);
-      expect(result(58).evaluate('Canino', two), LabFlag.above);
-      expect(result(45).sourcesFor('Canino', two), ['Fuente de prueba', 'Otra']);
+    test('dos fuentes: se muestran las dos, no se juntan', () {
+      final two = [
+        range(low: 37, high: 55),
+        range(low: 35, high: 57, source: 'Otra'),
+      ];
+      // 36 queda bajo para una fuente y dentro para la otra. Antes la union
+      // de los rangos lo daba por normal y se perdia que una fuente no lo
+      // acepta. Ahora no hay lectura unica: se muestran las dos.
+      final lecturas = result(36).readings('Canino', two);
+      expect(lecturas.map((l) => l.flag), [LabFlag.below, LabFlag.withinRange]);
+      expect(lecturas.map((l) => l.range!.source), [
+        'Fuente de prueba',
+        'Otra',
+      ]);
+      expect(result(36).agreedFlag('Canino', two), isNull);
+
+      // Donde las dos coinciden si hay lectura unica.
+      expect(result(45).agreedFlag('Canino', two), LabFlag.withinRange);
+      expect(result(58).agreedFlag('Canino', two), LabFlag.above);
+      expect(result(45).sourcesFor('Canino', two), [
+        'Fuente de prueba',
+        'Otra',
+      ]);
     });
   });
 
@@ -97,10 +115,11 @@ void main() {
           result(0.4, unit: 'L/L', key: 'hematocrito2'),
         ],
       );
-      final flags = panel.evaluate([range()]);
-      expect(flags['hematocrito'], LabFlag.withinRange);
-      expect(flags['albumina'], LabFlag.noReference);
+      final lecturas = panel.evaluate([range()]);
+      expect(lecturas['hematocrito']!.single.flag, LabFlag.withinRange);
+      expect(lecturas['albumina']!.single.flag, LabFlag.noReference);
       expect(panel.unjudged([range()]), 2);
+      expect(panel.disputed([range()]), isEmpty);
     });
 
     test('no admite analito repetido ni toma vacía', () {

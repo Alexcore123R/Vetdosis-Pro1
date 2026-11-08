@@ -1,5 +1,14 @@
 -- PROPUESTA, NO APLICADA. Cache de precios estimados por busqueda web y
--- contador de cuota. Sin catalogo de productos: una fila por concepto.
+-- contador de cuota.
+--
+-- Numerada 15L y no 15K: el 15K ya estaba reclamado por
+-- 15K_porcino_produccion.sql, la reescritura de las tablas porcinas de
+-- Gemini que quedo en la rama feature/porcino-tablas-propuesta-20261106 del
+-- repositorio suspendido. Ese archivo no esta ni en GitLab ni en la cuenta
+-- nueva: comprobado contra los dos remotos. Se deja el numero libre para
+-- cuando se recupere, en vez de reusarlo y tener dos 15K.
+--
+-- Sin catalogo de productos: una fila por concepto.
 -- Revisada sobre la propuesta de Sonnet; los cambios y por que van abajo.
 --
 -- 1. La reserva de cuota NO puede vivir en `private`. La funcion de servidor

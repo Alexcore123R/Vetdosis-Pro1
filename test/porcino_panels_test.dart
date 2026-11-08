@@ -136,7 +136,12 @@ void main() {
       expect(parseQuotedPrices('1200; 1350 ;1290'), [120000, 135000, 129000]);
       // La coma vale como decimal, no como separador de lista.
       expect(parseQuotedPrices('1,5'), [150]);
+      expect(parseQuotedPrices('1200,50'), [120050]);
+      // Dos cotizaciones escritas con coma. Antes casaba como un solo numero
+      // de cuatro decimales y entraba callado como 1 200.14 pesos.
       expect(() => parseQuotedPrices('1200,1350'), throwsFormatException);
+      // El dinero no tiene tres decimales; si llegan, es otra cosa.
+      expect(() => parseQuotedPrices('1200.135'), throwsFormatException);
       expect(() => parseQuotedPrices('mil'), throwsFormatException);
       expect(() => parseQuotedPrices('0'), throwsFormatException);
     });

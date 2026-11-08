@@ -1386,16 +1386,21 @@ class _PorcinoNitrogenPanelState extends State<PorcinoNitrogenPanel> {
 /// Precios cotizados de un concepto, en centavos de MXN.
 ///
 /// Se separan con punto y coma y no con coma porque la coma ya vale como
-/// separador decimal en el resto de los campos: «1,5» es uno y medio. Con
-/// coma, «1200,1350» seria ambiguo.
+/// separador decimal: «1,5» es uno y medio.
+///
+/// Por eso aqui el decimal se limita a dos cifras, que es lo que tiene el
+/// dinero. Sin ese limite «1200,1350» —dos cotizaciones escritas con coma—
+/// casaba como un solo numero con cuatro decimales y entraba en silencio
+/// como 1 200.14 pesos. Ahora se rechaza y se dice como escribirlo.
 List<int> parseQuotedPrices(String raw) {
   final out = <int>[];
   for (final piece in raw.split(';')) {
     final trimmed = piece.trim();
     if (trimmed.isEmpty) continue;
-    if (!RegExp(r'^\d+(?:[.,]\d+)?$').hasMatch(trimmed)) {
+    if (!RegExp(r'^\d+(?:[.,]\d{1,2})?$').hasMatch(trimmed)) {
       throw FormatException(
-        'Precios: números separados por punto y coma, por ejemplo 1200; 1350.',
+        'Precios: un número por cotización, con hasta dos decimales y '
+        'separados por punto y coma, por ejemplo 1200; 1350.50',
       );
     }
     final pesos = double.parse(trimmed.replaceAll(',', '.'));

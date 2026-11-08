@@ -25,6 +25,7 @@ const productionSpecies = <String, List<String>>{
     'Reproducción y gestación',
     'Maternidad y destete',
     'Crecimiento y engorda',
+    'Bioseguridad y ambiente',
   ],
   'Equinos': ['Atención individual', 'Reproducción y crianza'],
 };

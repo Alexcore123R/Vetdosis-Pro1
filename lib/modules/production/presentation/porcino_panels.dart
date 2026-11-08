@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../vet_ui/vet_components.dart';
 import '../../../vet_ui/vet_theme.dart';
+import '../domain/porcino_calculators.dart';
 import '../domain/porcino_capacity.dart';
 import '../domain/porcino_reference.dart';
 import 'growth_panel.dart';
@@ -18,6 +19,10 @@ List<Widget> porcinoPanelsFor(String activity, {required bool showCosts}) {
       notice,
       const PorcinoFlowPanel(),
       const _Gap(),
+      const PorcinoInverseCapacityPanel(),
+      const _Gap(),
+      PorcinoVentilationPanel(stages: _ventStages(['Gestación'])),
+      const _Gap(),
       const PorcinoSiloPanel(
         title: 'Silo para gestación',
         phases: porcinoGestationFeed,
@@ -30,6 +35,8 @@ List<Widget> porcinoPanelsFor(String activity, {required bool showCosts}) {
     ],
     'Maternidad y destete' => [
       notice,
+      PorcinoVentilationPanel(stages: _ventStages(['Maternidad', 'Destete'])),
+      const _Gap(),
       const PorcinoSpacePanel(
         title: 'Espacio en destete',
         weights: porcinoNurseryWeights,
@@ -50,6 +57,10 @@ List<Widget> porcinoPanelsFor(String activity, {required bool showCosts}) {
       notice,
       GrowthPanel(showCosts: showCosts),
       const _Gap(),
+      PorcinoVentilationPanel(
+        stages: _ventStages(['Engorda', 'Destete a finalización (WTF)']),
+      ),
+      const _Gap(),
       const PorcinoSpacePanel(
         title: 'Espacio en engorda',
         weights: porcinoFinishingWeights,
@@ -66,9 +77,19 @@ List<Widget> porcinoPanelsFor(String activity, {required bool showCosts}) {
         rows: porcinoGrowingReference,
       ),
     ],
+    'Bioseguridad y ambiente' => [
+      notice,
+      const PorcinoBiosecurityPanel(),
+      const _Gap(),
+      const PorcinoNitrogenPanel(),
+    ],
     _ => const <Widget>[],
   };
 }
+
+List<VentStage> _ventStages(List<String> names) => [
+  for (final n in names) ventilationStages.firstWhere((s) => s.name == n),
+];
 
 class _Gap extends StatelessWidget {
   const _Gap();
@@ -646,4 +667,705 @@ class PorcinoReferenceCard extends StatelessWidget {
         ),
     ],
   );
+}
+
+String _int(double v) {
+  final s = v.round().toString();
+  final b = StringBuffer();
+  for (var i = 0; i < s.length; i++) {
+    if (i > 0 && (s.length - i) % 3 == 0) b.write(' ');
+    b.write(s[i]);
+  }
+  return b.toString();
+}
+
+/// Caudal de aire de una sala = animales × tasa de diseño por animal.
+class PorcinoVentilationPanel extends StatefulWidget {
+  const PorcinoVentilationPanel({super.key, required this.stages});
+  final List<VentStage> stages;
+  @override
+  State<PorcinoVentilationPanel> createState() =>
+      _PorcinoVentilationPanelState();
+}
+
+class _PorcinoVentilationPanelState extends State<PorcinoVentilationPanel> {
+  final animals = TextEditingController();
+  int stage = 0;
+  VentClimate climate = VentClimate.mild;
+  VentTable table = VentTable.imperial;
+  VentilationEstimate? result;
+  String? error;
+
+  @override
+  void dispose() {
+    animals.dispose();
+    super.dispose();
+  }
+
+  VentStage get current => widget.stages[stage];
+
+  void reset() => setState(() {
+    result = null;
+    error = null;
+  });
+
+  void calculate() {
+    setState(() {
+      result = null;
+      error = null;
+      try {
+        result = VentilationEstimate(
+          stage: current,
+          climate: climate,
+          animals: _whole(animals, 'Animales'),
+          table: table,
+        );
+      } on FormatException catch (e) {
+        error = e.message;
+      }
+    });
+  }
+
+  String _range(double lo, double hi, {bool minimum = false}) {
+    if (minimum) return '≥ ${_int(lo)}';
+    return lo.round() == hi.round() ? _int(lo) : '${_int(lo)} – ${_int(hi)}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final r = result;
+    final hasMetric = current.metricM3h != null;
+    return VetCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const _PanelHeader(
+            icon: Icons.air_rounded,
+            title: 'Ventilación de la sala',
+            subtitle: 'Caudal de aire = animales × tasa de diseño por animal.',
+          ),
+          if (widget.stages.length > 1)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final (i, s) in widget.stages.indexed)
+                    ChoiceChip(
+                      label: Text(s.name),
+                      selected: stage == i,
+                      onSelected: (_) => setState(() {
+                        stage = i;
+                        if (s.metricM3h == null) table = VentTable.imperial;
+                        result = null;
+                        error = null;
+                      }),
+                    ),
+                ],
+              ),
+            ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final c in VentClimate.values)
+                ChoiceChip(
+                  label: Text(c.label),
+                  selected: climate == c,
+                  onSelected: (_) => setState(() {
+                    climate = c;
+                    result = null;
+                    error = null;
+                  }),
+                ),
+            ],
+          ),
+          if (hasMetric)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  ChoiceChip(
+                    label: Text('Tabla en CFM (${current.weightNote})'),
+                    selected: table == VentTable.imperial,
+                    onSelected: (_) => setState(() {
+                      table = VentTable.imperial;
+                      result = null;
+                    }),
+                  ),
+                  ChoiceChip(
+                    label: Text('Tabla en m³/h (${current.metricWeightNote})'),
+                    selected: table == VentTable.metric,
+                    onSelected: (_) => setState(() {
+                      table = VentTable.metric;
+                      result = null;
+                    }),
+                  ),
+                ],
+              ),
+            ),
+          _Field(
+            controller: animals,
+            label: 'Animales en la sala',
+            helper: 'Peso de la etapa: ${current.weightNote}',
+            onChanged: reset,
+          ),
+          const SizedBox(height: 8),
+          VetActionButton(
+            icon: Icons.calculate_outlined,
+            label: 'Calcular caudal',
+            onPressed: calculate,
+          ),
+          if (error != null)
+            VetNotice(
+              text: error!,
+              icon: Icons.error_outline,
+              kind: VetBadgeKind.danger,
+            ),
+          if (r != null) ...[
+            _Results([
+              (
+                'Por animal (m³/h)',
+                _range(
+                  r.perAnimalMinM3h,
+                  r.perAnimalMaxM3h,
+                  minimum: r.isMinimumOnly,
+                ),
+              ),
+              (
+                'Sala completa (m³/h)',
+                _range(r.totalMinM3h, r.totalMaxM3h, minimum: r.isMinimumOnly),
+              ),
+              (
+                'Sala completa (CFM)',
+                _range(r.totalMinCfm, r.totalMaxCfm, minimum: r.isMinimumOnly),
+              ),
+            ]),
+            const SizedBox(height: 10),
+            Text(
+              r.isMinimumOnly
+                  ? 'La tabla de origen marca «>» para este clima: es un mínimo, no un valor de diseño. Consulta el dato del fabricante de los ventiladores.'
+                  : 'Referencia de clase; no sustituye el cálculo del proyecto de ventilación.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+          const SizedBox(height: 10),
+          Text(
+            hasMetric
+                ? 'Las dos tablas de destete y engorda no coinciden entre sí (por ejemplo, engorda en clima cálido: más de 150 CFM ≈ 255 m³/h contra 200 m³/h). Se muestran ambas tal como están en el material.'
+                : 'Conversión: 1 CFM = 1.699 m³/h.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 4),
+          Text(ventilationSource, style: Theme.of(context).textTheme.bodySmall),
+        ],
+      ),
+    );
+  }
+}
+
+/// De cerdos por semana (o de metros cuadrados) a vientres necesarios.
+class PorcinoInverseCapacityPanel extends StatefulWidget {
+  const PorcinoInverseCapacityPanel({super.key});
+  @override
+  State<PorcinoInverseCapacityPanel> createState() =>
+      _PorcinoInverseCapacityPanelState();
+}
+
+class _PorcinoInverseCapacityPanelState
+    extends State<PorcinoInverseCapacityPanel> {
+  final pigs = TextEditingController();
+  final m2 = TextEditingController();
+  final density = TextEditingController();
+  final cycle = TextEditingController(text: '24');
+  final weaned = TextEditingController(text: '30');
+  bool fromSpaces = false;
+  InverseCapacity? result;
+  String? error;
+
+  @override
+  void dispose() {
+    for (final c in [pigs, m2, density, cycle, weaned]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  void reset() => setState(() {
+    result = null;
+    error = null;
+  });
+
+  void calculate() {
+    setState(() {
+      result = null;
+      error = null;
+      try {
+        final w = _decimal(weaned, 'Destetados por vientre al año');
+        result = fromSpaces
+            ? InverseCapacity.fromSpaces(
+                totalM2: _decimal(m2, 'Superficie'),
+                m2PerPig: _decimal(density, 'm² por cerdo'),
+                cycleWeeks: _whole(cycle, 'Semanas de ciclo'),
+                weanedPerSowYear: w,
+              )
+            : InverseCapacity(
+                pigsPerWeek: _decimal(pigs, 'Cerdos por semana'),
+                weanedPerSowYear: w,
+              );
+      } on FormatException catch (e) {
+        error = e.message;
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final r = result;
+    return VetCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const _PanelHeader(
+            icon: Icons.swap_vert_rounded,
+            title: 'Capacidad inversa: de la producción a los vientres',
+            subtitle:
+                'Para remodelar o redimensionar: cuántos vientres sostiene una producción semanal.',
+          ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ChoiceChip(
+                label: const Text('Tengo cerdos por semana'),
+                selected: !fromSpaces,
+                onSelected: (_) => setState(() {
+                  fromSpaces = false;
+                  result = null;
+                  error = null;
+                }),
+              ),
+              ChoiceChip(
+                label: const Text('Tengo metros cuadrados'),
+                selected: fromSpaces,
+                onSelected: (_) => setState(() {
+                  fromSpaces = true;
+                  result = null;
+                  error = null;
+                }),
+              ),
+            ],
+          ),
+          if (!fromSpaces)
+            _Field(
+              controller: pigs,
+              label: 'Cerdos producidos por semana',
+              decimal: true,
+              onChanged: reset,
+            )
+          else ...[
+            _Field(
+              controller: m2,
+              label: 'Superficie total de engorda (m²)',
+              decimal: true,
+              onChanged: reset,
+            ),
+            _Field(
+              controller: density,
+              label: 'm² por cerdo',
+              decimal: true,
+              helper: 'Ejemplo de clase: 1.2 en piso sólido (sistema WTF)',
+              onChanged: reset,
+            ),
+            _Field(
+              controller: cycle,
+              label: 'Semanas de ciclo',
+              helper: 'Ejemplo de clase: 24',
+              onChanged: reset,
+            ),
+          ],
+          _Field(
+            controller: weaned,
+            label: 'Destetados por vientre al año',
+            decimal: true,
+            helper: 'Referencia de clase: 30 o 35',
+            onChanged: reset,
+          ),
+          const SizedBox(height: 8),
+          VetActionButton(
+            icon: Icons.calculate_outlined,
+            label: 'Calcular vientres',
+            onPressed: calculate,
+          ),
+          if (error != null)
+            VetNotice(
+              text: error!,
+              icon: Icons.error_outline,
+              kind: VetBadgeKind.danger,
+            ),
+          if (r != null) ...[
+            _Results([
+              ('Cerdos por semana', _fmt(r.pigsPerWeek, 1)),
+              ('Factor semanal', _fmt(r.weeklyFactor, 3)),
+              ('Vientres necesarios', '${r.sows}'),
+            ]),
+            const SizedBox(height: 10),
+            Text(
+              'Procedimiento: vientres = cerdos por semana ÷ (destetados por vientre al año ÷ 52). Se redondea hacia arriba; la hoja de clase redondea el factor a tres decimales y puede diferir en una unidad.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+          const SizedBox(height: 4),
+          Text(
+            'Fuente: Remodelaciones y redimensionamiento, Pork School ago-2026 (Carlos Alberto Félix Rosas). Sin validación externa.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+const _biosecurityCrossings = [
+  'Duchas / banco',
+  'Sala de desinfección',
+  'Cámara de luz UV / ventana',
+  'Extracción de mortalidad',
+  'Embarcadero',
+];
+
+const _biosecurityRoutes = [
+  'Fauna, insectos, polvo y aerosol',
+  'Personas',
+  'Transporte',
+  'Alimento',
+  'Gestión de mortalidad',
+  'Materiales y equipos',
+  'Reposición y semen',
+  'Manejo de purines',
+];
+
+const _biosecurityKeys = [
+  'Localización ideal',
+  'Filtración de aire (signo de interrogación en el original)',
+  'Flujo de reemplazo y lechones',
+  'Edificación compacta',
+  'Área limpia definida y contenida',
+  'Mínimos puntos cómodos de entrada y salida',
+  'Interacción adecuada con servicios externos',
+];
+
+const biosecuritySource =
+    'Concepto, manejo y diseño de bioseguridad (Jean Paul Cano), Pork School ago-2026. Sin validación externa.';
+
+/// Lista de revisión de bioseguridad de una granja: el avance se guarda solo
+/// en pantalla; no es un registro ni una auditoría.
+class PorcinoBiosecurityPanel extends StatefulWidget {
+  const PorcinoBiosecurityPanel({super.key});
+  @override
+  State<PorcinoBiosecurityPanel> createState() =>
+      _PorcinoBiosecurityPanelState();
+}
+
+class _PorcinoBiosecurityPanelState extends State<PorcinoBiosecurityPanel> {
+  final checked = <String>{};
+  final distance = TextEditingController();
+  DistanceBand? band;
+  String? error;
+
+  int get total =>
+      _biosecurityRoutes.length +
+      _biosecurityCrossings.length +
+      _biosecurityKeys.length;
+
+  @override
+  void dispose() {
+    distance.dispose();
+    super.dispose();
+  }
+
+  void classify() {
+    setState(() {
+      band = null;
+      error = null;
+      try {
+        band = classifyFarmDistance(_decimal(distance, 'Distancia'));
+      } on FormatException catch (e) {
+        error = e.message;
+      }
+    });
+  }
+
+  Widget _group(String title, String prefix, List<String> items, String ask) {
+    final textTheme = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 14, bottom: 2),
+          child: Text(title, style: textTheme.titleSmall),
+        ),
+        for (final item in items)
+          CheckboxListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            controlAffinity: ListTileControlAffinity.leading,
+            title: Text(
+              ask.isEmpty ? item : '$ask: $item',
+              style: textTheme.bodyMedium,
+            ),
+            value: checked.contains('$prefix$item'),
+            onChanged: (v) => setState(() {
+              v == true
+                  ? checked.add('$prefix$item')
+                  : checked.remove('$prefix$item');
+            }),
+          ),
+      ],
+    );
+  }
+
+  String _bandText(DistanceBand b) => switch (b) {
+    DistanceBand.veryClose =>
+      'Menos de 0.5 km: mismo sitio o granja contigua, riesgo alto de transmisión por roedores, insectos, polvo y personas.',
+    DistanceBand.risk =>
+      'Menos de 3 km: hay riesgo de transmisión por moscas (PRRS se describe a 2.4 km), aerosol (M. hyopneumoniae a 3.2 km) o polvo (PEDV).',
+    DistanceBand.intermediate =>
+      'Entre 3 y 10 km: el material no fija un umbral en este tramo. Se citan PRRS a 9.1 km y M. hyopneumoniae a 9.2 km.',
+    DistanceBand.far =>
+      'Más de 10 km: se minimiza el riesgo de transmisión de PRRS y M. hyopneumoniae.',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return VetCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const _PanelHeader(
+            icon: Icons.shield_outlined,
+            title: 'Revisión de bioseguridad',
+            subtitle:
+                'Marca lo que la granja ya tiene definido. Es una guía de revisión, no una auditoría.',
+          ),
+          Row(
+            children: [
+              VetStatusBadge(
+                label: '${checked.length} de $total revisados',
+                kind: checked.length == total
+                    ? VetBadgeKind.success
+                    : VetBadgeKind.unverified,
+              ),
+            ],
+          ),
+          _group(
+            'Rutas de entrada de enfermedades',
+            'ruta:',
+            _biosecurityRoutes,
+            '¿Hay control definido para',
+          ),
+          _group(
+            'Puntos de cruce del área limpia',
+            'cruce:',
+            _biosecurityCrossings,
+            '¿Está definido y se controla',
+          ),
+          _group(
+            'Siete claves de diseño',
+            'clave:',
+            _biosecurityKeys,
+            '',
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Áreas: limpia = caseta, pasillo, oficina y chute · intermedia = entre la caseta y la cerca · sucia = fuera de la cerca.',
+            style: textTheme.bodySmall,
+          ),
+          const Divider(height: 28),
+          Text('Distancia a otra granja porcina', style: textTheme.titleSmall),
+          _Field(
+            controller: distance,
+            label: 'Distancia a la granja más cercana (km)',
+            decimal: true,
+            onChanged: () => setState(() {
+              band = null;
+              error = null;
+            }),
+          ),
+          VetActionButton(
+            icon: Icons.near_me_outlined,
+            label: 'Ubicar en la escala',
+            onPressed: classify,
+          ),
+          if (error != null)
+            VetNotice(
+              text: error!,
+              icon: Icons.error_outline,
+              kind: VetBadgeKind.danger,
+            ),
+          if (band != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Text(_bandText(band!), style: textTheme.bodyMedium),
+            ),
+          const SizedBox(height: 10),
+          Text(biosecuritySource, style: textTheme.bodySmall),
+        ],
+      ),
+    );
+  }
+}
+
+/// Carga de nitrógeno, huella hídrica gris y nivel de contaminación del agua.
+/// Las constantes por defecto son las del Dictamen de Yucatán.
+class PorcinoNitrogenPanel extends StatefulWidget {
+  const PorcinoNitrogenPanel({super.key});
+  @override
+  State<PorcinoNitrogenPanel> createState() => _PorcinoNitrogenPanelState();
+}
+
+class _PorcinoNitrogenPanelState extends State<PorcinoNitrogenPanel> {
+  final pigs = TextEditingController();
+  final load = TextEditingController(text: '18');
+  final cNat = TextEditingController(text: '1.5');
+  final cMax = TextEditingController(text: '3.0');
+  final area = TextEditingController();
+  final recharge = TextEditingController(text: '175336');
+  NitrogenFootprint? result;
+  String? error;
+
+  @override
+  void dispose() {
+    for (final c in [pigs, load, cNat, cMax, area, recharge]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  void reset() => setState(() {
+    result = null;
+    error = null;
+  });
+
+  void calculate() {
+    setState(() {
+      result = null;
+      error = null;
+      try {
+        final hasArea = area.text.trim().isNotEmpty;
+        result = NitrogenFootprint(
+          pigs: _whole(pigs, 'Cerdos'),
+          kgNPerPigYear: _decimal(load, 'Carga de N por cerdo'),
+          cNaturalMgL: _decimal(cNat, 'Concentración natural'),
+          cMaxMgL: _decimal(cMax, 'Cmax'),
+          areaKm2: hasArea ? _decimal(area, 'Superficie') : null,
+          unitRechargeM3Km2: hasArea ? _decimal(recharge, 'Recarga unitaria') : null,
+        );
+      } on FormatException catch (e) {
+        error = e.message;
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final r = result;
+    return VetCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const _PanelHeader(
+            icon: Icons.water_drop_outlined,
+            title: 'Nitrógeno y huella hídrica gris',
+            subtitle: 'Cuánta agua haría falta para diluir el nitrógeno que excretan los cerdos.',
+          ),
+          const VetNotice(
+            text:
+                'Los valores precargados son de Yucatán (Dictamen SEMARNAT, 2023). Para otra región cambia la concentración natural, Cmax y la recarga con datos locales.',
+            icon: Icons.place_outlined,
+          ),
+          const SizedBox(height: 8),
+          _Field(controller: pigs, label: 'Cerdos', onChanged: reset),
+          _Field(
+            controller: load,
+            label: 'Nitrógeno excretado (kg N/cerdo/año)',
+            decimal: true,
+            helper: 'Dictamen: 18, según DEFRA 2007',
+            onChanged: reset,
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: _Field(
+                  controller: cNat,
+                  label: 'Cnat (mg/L)',
+                  decimal: true,
+                  helper: 'Yucatán: 1.5',
+                  onChanged: reset,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _Field(
+                  controller: cMax,
+                  label: 'Cmax (mg/L)',
+                  decimal: true,
+                  helper: 'Yucatán: 3.0 o 10.0',
+                  onChanged: reset,
+                ),
+              ),
+            ],
+          ),
+          _Field(
+            controller: area,
+            label: 'Superficie del municipio o zona (km²), opcional',
+            decimal: true,
+            helper: 'Solo para calcular el NCA',
+            onChanged: reset,
+          ),
+          _Field(
+            controller: recharge,
+            label: 'Recarga unitaria (m³/km²/año)',
+            decimal: true,
+            helper: 'Yucatán: 175 336 (21 813 Hm³ ÷ 124 409 km²)',
+            onChanged: reset,
+          ),
+          const SizedBox(height: 8),
+          VetActionButton(
+            icon: Icons.calculate_outlined,
+            label: 'Calcular huella',
+            onPressed: calculate,
+          ),
+          if (error != null)
+            VetNotice(
+              text: error!,
+              icon: Icons.error_outline,
+              kind: VetBadgeKind.danger,
+            ),
+          if (r != null) ...[
+            _Results([
+              ('Nitrógeno excretado (kg N/año)', _int(r.loadKgNYear)),
+              ('Huella hídrica gris (m³/año)', _int(r.greyWaterM3Year)),
+              if (r.nca != null) ('NCA', _fmt(r.nca!, 2)),
+              if (r.nca != null) ('Lectura', r.ncaReading!),
+            ]),
+            const SizedBox(height: 10),
+            Text(
+              'HHGris = carga ÷ (Cmax − Cnat); NCA = HHGris ÷ recarga disponible. NCA mayor que 1 indica no sustentabilidad y mayor que 2, condiciones críticas. La recarga disponible se toma como recarga unitaria × superficie; confirma esa lectura con el dictamen antes de usar el resultado en un trámite.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+          const SizedBox(height: 4),
+          Text(
+            'Fuente: Dictamen Diagnóstico Ambiental de la Actividad Porcícola en Yucatán (SEMARNAT, marzo 2023), p. 84-86. Método de Mekonnen y Hoekstra (2016).',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
+  }
 }

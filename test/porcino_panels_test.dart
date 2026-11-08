@@ -112,4 +112,20 @@ void main() {
       expect(find.textContaining('no están habilitadas'), findsOneWidget);
     }
   });
+
+  testWidgets('Biosecurity and environment activity shows its two panels', (
+    tester,
+  ) async {
+    await tester.pumpWidget(app(admin));
+    await tester.ensureVisible(find.text('Porcinos'));
+    await tester.tap(find.text('Porcinos'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Bioseguridad y ambiente'));
+    await tester.tap(find.text('Bioseguridad y ambiente'));
+    await tester.pumpAndSettle();
+    expect(find.byType(PorcinoBiosecurityPanel), findsOneWidget);
+    expect(find.byType(PorcinoNitrogenPanel), findsOneWidget);
+    expect(find.text('0 de 20 revisados'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

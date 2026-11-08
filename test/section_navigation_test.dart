@@ -13,6 +13,7 @@ import 'package:vetdosis_pro/modules/production/presentation/production_menu.dar
 import 'package:vetdosis_pro/modules/aviculture/presentation/aviculture_screen.dart';
 import 'package:vetdosis_pro/modules/incubation/presentation/incubation_screen.dart';
 import 'package:vetdosis_pro/modules/operations/presentation/operations_screen.dart';
+import 'package:vetdosis_pro/vet_ui/vet_theme.dart';
 import 'module_navigation_dashboard_test.dart' show contract;
 import 'support/fake_auth.dart';
 import 'remaining_test.dart' show FakeOperations;
@@ -57,7 +58,7 @@ void main() {
       );
       final theme = Theme.of(tester.element(drawer));
       expect(theme.drawerTheme.backgroundColor, theme.colorScheme.surface);
-      expect(theme.colorScheme.primary, const Color(0xFF087F83));
+      expect(theme.colorScheme.primary, VetColors.purple);
       tester.state<ScaffoldState>(find.byType(Scaffold).first).closeDrawer();
       await tester.pumpAndSettle();
       expect(

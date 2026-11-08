@@ -88,9 +88,14 @@ import '../modules/core/presentation/core_view_model.dart';
 import '../modules/auth/presentation/auth_view_model.dart';
 import '../modules/auth/presentation/auth_screen.dart';
 
-const paletteNames = ['Esmeralda', 'Océano', 'Índigo', 'Ámbar', 'Obsidiana'];
+// El tema por omision deja de ser el verde esmeralda y pasa a ser el morado
+// brillante de la marca (VetColors.purple, el mismo del logotipo y del
+// degradado de «Iniciar sesion»). Siguen siendo cinco: la semilla verde no se
+// borra, se sustituye por una de la gama propia de la app, asi que quien
+// tuviera elegido el tema 0 ve morado sin que se le mueva la seleccion.
+const paletteNames = ['Amatista', 'Océano', 'Índigo', 'Ámbar', 'Obsidiana'];
 const paletteColors = [
-  Color(0xFF087F68),
+  VetColors.purple,
   Color(0xFF126AAB),
   Color(0xFF6254AE),
   Color(0xFF946000),
@@ -167,12 +172,21 @@ class VetDosisApp extends StatelessWidget {
     final surface = dark
         ? VetColors.darkSurface
         : (neumorphic ? neuBackground : VetColors.surface);
-    final primary = dark
-        ? const Color(0xFF55E2D3)
-        : (neumorphic ? const Color(0xFF087F83) : VetColors.purple);
+    // El primario deja de ser verde y pasa al morado brillante de la marca.
+    // El verde no se pierde: baja a secundario, que es donde estaba el
+    // lavanda, porque con un primario morado el lavanda ya no distinguia los
+    // dos papeles. Siguen siendo los mismos tres tonos por modo, solo cambian
+    // de puesto.
+    //
+    // En oscuro el morado va mas claro a proposito: #7C4DFF sobre el fondo
+    // #201F25 da 3.4:1, por debajo del minimo de texto; #B69BFF da 7.1:1.
+    // En claro, #7C4DFF da 4.8:1 con el blanco del boton y 4.1:1 sobre el
+    // fondo #EBECF2, lo mismo que daba el verde #087F83 (4.1:1), asi que no
+    // se pierde legibilidad respecto a lo que habia.
+    final primary = dark ? const Color(0xFFB69BFF) : VetColors.purple;
     final secondary = dark
-        ? const Color(0xFFB69BFF)
-        : (neumorphic ? neuLavender : VetColors.turquoise);
+        ? const Color(0xFF55E2D3)
+        : (neumorphic ? const Color(0xFF087F83) : VetColors.turquoise);
     final tertiary = dark ? const Color(0xFFFF92C9) : VetColors.lavender;
     final scheme =
         ColorScheme.fromSeed(
@@ -182,8 +196,11 @@ class VetDosisApp extends StatelessWidget {
           brightness: brightness,
         ).copyWith(
           primary: neumorphic ? primary : null,
+          // Tinta sobre el primario. En oscuro el primario es claro, asi
+          // que la tinta va oscura y de la familia violeta, no el verde casi
+          // negro de antes: #2A1055 sobre #B69BFF da 7.0:1.
           onPrimary: neumorphic
-              ? (dark ? const Color(0xFF062321) : Colors.white)
+              ? (dark ? const Color(0xFF2A1055) : Colors.white)
               : null,
           secondary: neumorphic ? secondary : null,
           tertiary: neumorphic ? tertiary : null,

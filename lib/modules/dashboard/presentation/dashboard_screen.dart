@@ -1,6 +1,8 @@
+import '../../../core/widgets/neu_identity.dart';
 import '../../../core/widgets/neu_header_card.dart';
 import 'home_pilot.dart';
 import '../../../vet_ui/vet_components.dart';
+import '../../../vet_ui/vet_theme.dart';
 import '../../doses/domain/quantity.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -13,6 +15,10 @@ import '../../prescribing/presentation/rx_entry_screen.dart';
 import 'dashboard_view_model.dart';
 import 'alert_preferences_panel.dart';
 
+/// Inicio: resumen del espacio, accesos a los modulos y proximas citas.
+///
+/// Lo que muestra depende de los permisos de quien entra: cada bloque se
+/// omite si su area no esta visible para esa persona.
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({
     super.key,
@@ -71,12 +77,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return '${d.day}/${d.month}/${d.year} · ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
   }
 
-  Color sectionColor(String page) => switch (page) {
-    'Pacientes' || 'Hospitalización' => const Color(0xFF61C7BA),
-    'Inventario' || 'Cálculo rápido' => const Color(0xFF51BAC6),
-    'Estadísticas' || 'Caja' => const Color(0xFF879AE0),
-    _ => const Color(0xFFAC8DD5),
-  };
+  // Una sola tabla de color por seccion, la de workspace_panel.dart, en vez
+  // de esta copia local: la cuadricula de Inicio y el panel pintaban el mismo
+  // modulo de colores distintos.
+  Color sectionColor(String page) => sectionAccent(page);
 
   Widget panel(String title, String page, List<Widget> children) =>
       NeuHeaderCard(
@@ -158,20 +162,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
-  List<(String, String, IconData)> get summaryMetrics => [
+  List<(String, String, IconData, Color)> get summaryMetrics => [
     if (model.member != null && model.canSeePatients && routeVisible('Pacientes'))
-      ('Pacientes', model.patientCount?.toString() ?? '—', Icons.pets_outlined),
+      (
+        'Pacientes',
+        model.patientCount?.toString() ?? '—',
+        Icons.pets_outlined,
+        VetColors.turquoise,
+      ),
     if (model.member != null && model.canSummarize('agenda') && routeVisible('Agenda'))
       (
         'Citas por venir',
         model.agenda == null ? '—' : '${model.upcoming.length}',
         Icons.calendar_month_outlined,
+        VetColors.violet,
       ),
     if (model.member != null && model.canSummarize('hospital') && routeVisible('Hospitalización'))
       (
         'En hospital',
         model.ward == null ? '—' : '${model.ward!.stays.length}',
         Icons.local_hospital_outlined,
+        VetColors.cyan,
       ),
     if (model.member != null &&
         !model.member!.isPersonal &&
@@ -180,6 +191,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'Tareas visibles',
         model.agenda == null ? '—' : '${model.pendingTasks.length}',
         Icons.task_alt,
+        VetColors.lilac,
       ),
   ];
 
@@ -354,10 +366,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ('Escáner', 'Escanear producto'),
                   ])
                     if (routeVisible(action.$2))
-                      OutlinedButton.icon(
-                        onPressed: () => openPage(action.$2),
-                        icon: Icon(sectionIcon(action.$2)),
-                        label: Text(action.$1),
+                      // Sin la linea de borde y con el relieve del sistema:
+                      // la pildora se levanta de la superficie en vez de
+                      // dibujarse con un trazo, como el resto del neu.
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: neuShadows(
+                            Theme.of(context).brightness == Brightness.dark,
+                            depth: .55,
+                          ),
+                        ),
+                        child: OutlinedButton.icon(
+                          onPressed: () => openPage(action.$2),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide.none,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.surface,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                          ),
+                          icon: Icon(
+                            sectionIcon(action.$2),
+                            color: sectionAccent(action.$2),
+                          ),
+                          label: Text(action.$1),
+                        ),
                       ),
                 ],
               ),

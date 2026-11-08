@@ -8,16 +8,24 @@ const neuLavender = Color(0xFF7860B5);
 const neuMint = Color(0xFF98E7D9);
 const neuLilac = Color(0xFFC5A8EF);
 
+/// Par de sombras del estilo neumorfico: una oscura abajo y una luz arriba.
+///
+/// [depth] escala las dos a la vez, para hundir un control pulsado o
+/// levantar una tarjeta sin recalcular los desplazamientos.
 List<BoxShadow> neuShadows(bool dark, {double depth = 1}) => [
   BoxShadow(
-    color: dark ? const Color(0x80000000) : const Color(0x80B8BDCE),
-    offset: Offset(5 * depth, 5 * depth),
-    blurRadius: 16 * depth,
+    // Por indicacion de Ale el relieve va mas suave: antes la sombra iba al
+    // 50% y el brillo casi opaco, y el resultado quedaba muy marcado frente
+    // a las maquetas. Se baja la opacidad y se acorta el desplazamiento; el
+    // desenfoque se mantiene ancho para que difumine en vez de recortar.
+    color: dark ? const Color(0x59000000) : const Color(0x47B8BDCE),
+    offset: Offset(3 * depth, 3 * depth),
+    blurRadius: 14 * depth,
   ),
   BoxShadow(
-    color: dark ? const Color(0x402F4053) : const Color(0xF2FFFFFF),
-    offset: Offset(-5 * depth, -5 * depth),
-    blurRadius: 16 * depth,
+    color: dark ? const Color(0x2E3A3747) : const Color(0xB3FFFFFF),
+    offset: Offset(-3 * depth, -3 * depth),
+    blurRadius: 14 * depth,
   ),
 ];
 
@@ -91,6 +99,9 @@ class NeuInputBorder extends OutlineInputBorder {
   }
 }
 
+/// Marca completa: el icono con el nombre y el lema debajo.
+///
+/// Con [large] se usa en las pantallas de acceso; en pequeno, en la cabecera.
 class VetDosisBrand extends StatelessWidget {
   const VetDosisBrand({super.key, this.large = false});
   final bool large;
@@ -104,13 +115,13 @@ class VetDosisBrand extends StatelessWidget {
           TextSpan(
             text: 'VetDosis ',
             style: TextStyle(
-              color: dark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8),
+              color: dark ? const Color(0xFF93C5FD) : const Color(0xFF14204E),
             ),
           ),
           TextSpan(
             text: 'Pro',
             style: TextStyle(
-              color: dark ? const Color(0xFFC5A8EF) : const Color(0xFF7C3AED),
+              color: dark ? const Color(0xFFC5A8EF) : const Color(0xFF7A4AB8),
             ),
           ),
         ],
@@ -123,7 +134,7 @@ class VetDosisBrand extends StatelessWidget {
       textAlign: TextAlign.center,
       style: TextStyle(
         fontSize: large ? 14 : 11,
-        color: dark ? const Color(0xFF93C5FD) : const Color(0xFF60A5FA),
+        color: dark ? const Color(0xFF93C5FD) : const Color(0xFF0E1B45),
       ),
     );
     if (large) {
@@ -154,6 +165,7 @@ class VetDosisBrand extends StatelessWidget {
   }
 }
 
+/// Boton principal del estilo neumorfico, que se hunde al pulsarlo.
 class NeuPrimaryButton extends StatefulWidget {
   const NeuPrimaryButton({
     super.key,

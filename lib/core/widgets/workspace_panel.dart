@@ -1,3 +1,4 @@
+import '../../vet_ui/vet_theme.dart';
 import 'neu_identity.dart';
 import 'package:flutter/material.dart';
 
@@ -62,6 +63,35 @@ class WorkspacePanel extends StatelessWidget {
     );
   }
 }
+
+/// Color de marca de cada seccion, para distinguirlas de un vistazo.
+///
+/// Vive junto a [sectionIcon] y no dentro de una pantalla porque lo usan el
+/// panel, la cuadricula de modulos de Inicio y las cifras del espacio. Antes
+/// la cuadricula pintaba todos los modulos con el mismo lavanda y el mismo
+/// primary, asi que se veian identicos, mientras el panel tenia su propia
+/// tabla aparte: dos tablas en paralelo para lo mismo.
+///
+/// Las familias se agrupan por cercania clinica, no por capricho: lo que se
+/// consulta sobre el animal en turquesa y menta, lo que mueve existencias en
+/// cian, lo administrativo en violetas.
+Color sectionAccent(String page) => switch (page) {
+  'Pacientes' => VetColors.turquoise,
+  'Hospitalización' => VetColors.mint,
+  'Agenda' || 'Checado' => VetColors.violet,
+  'Inventario' => VetColors.cyan,
+  'Receta' || 'Recetas' => VetColors.lilac,
+  'Cálculo rápido' ||
+  'Cálculos' ||
+  'Operaciones de dosis' ||
+  'Vademécum' => VetColors.brandSky,
+  'Cálculos clínicos' => VetColors.purple,
+  'Escanear producto' => VetColors.purpleDeep,
+  'Estadísticas' || 'Respaldo' || 'Estadísticas y respaldo' => VetColors.violet,
+  'Caja' || 'Planeación financiera' => VetColors.brandAqua,
+  'Formatos' => VetColors.lavender,
+  _ => VetColors.lilac,
+};
 
 IconData sectionIcon(String page) => switch (page) {
   'Inicio' => Icons.dashboard_outlined,

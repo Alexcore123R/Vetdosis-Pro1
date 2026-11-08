@@ -21,12 +21,21 @@ class VetCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dark = theme.brightness == Brightness.dark;
-    return Container(
-      padding: padding,
+    // El orden importa, y antes estaba mal: el Material recortaba DENTRO del
+    // padding con el radio exterior, asi que la curva de la esquina mordia la
+    // caja de contenido. El primer hijo perdia su esquina superior izquierda y
+    // «Tu agenda» se pintaba como «Íu agenda». Medido: de 26 filas de la
+    // primera linea, 24 quedaban fuera del recorte.
+    //
+    // Ahora, de fuera adentro: la sombra, que debe quedar FUERA del recorte o
+    // se corta; el recorte, sobre el borde real de la tarjeta; y dentro la
+    // superficie con su borde y el padding, que es lo que separa el contenido
+    // de las curvas. El recorte sigue existiendo para que las ondas del
+    // InkWell no se salgan, que es para lo que estaba.
+    final forma = BorderRadius.circular(radius);
+    return DecoratedBox(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: theme.colorScheme.outlineVariant),
+        borderRadius: forma,
         boxShadow: [
           BoxShadow(
             color: dark ? Colors.black26 : VetColors.softShadow,
@@ -35,11 +44,24 @@ class VetCard extends StatelessWidget {
           ),
         ],
       ),
+      // La superficie va en el propio Material, no en un Container de dentro.
+      // ListTile pinta su fondo y sus ondas sobre el Material mas cercano, asi
+      // que un color intermedio se los tapa, y el framework lo detecta
+      // (_debugCheckBackgroundIsHidden salta con cualquier DecoratedBox
+      // intermedio de color opaco). El de aqui dentro lleva solo el borde, que
+      // no cuenta como fondo.
       child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(radius),
+        color: theme.colorScheme.surface,
+        borderRadius: forma,
         clipBehavior: Clip.antiAlias,
-        child: child,
+        child: Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            borderRadius: forma,
+            border: Border.all(color: theme.colorScheme.outlineVariant),
+          ),
+          child: child,
+        ),
       ),
     );
   }
@@ -321,4 +343,260 @@ class VetKpiCard extends StatelessWidget {
       ],
     ),
   );
+}
+
+/// Cuadro tintado con ícono para el icono de un módulo, sección o especie.
+class VetIconBox extends StatelessWidget {
+  const VetIconBox({
+    super.key,
+    required this.icon,
+    this.accent = VetColors.turquoise,
+    this.size = 44,
+  });
+  final IconData icon;
+  final Color accent;
+  final double size;
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      color: accent.withValues(alpha: .15),
+      borderRadius: BorderRadius.circular(size * .32),
+    ),
+    child: Icon(icon, color: accent, size: size * .52),
+  );
+}
+
+/// Título de pantalla o de bloque con una línea de apoyo opcional.
+class VetSectionHeader extends StatelessWidget {
+  const VetSectionHeader({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.large = false,
+  });
+  final String title;
+  final String? subtitle;
+  final bool large;
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: large ? textTheme.headlineSmall : textTheme.titleMedium,
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              subtitle!,
+              style: textTheme.bodyMedium?.copyWith(color: VetColors.muted),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Aviso con ícono para notas de contexto, límites o accesos no habilitados.
+class VetNotice extends StatelessWidget {
+  const VetNotice({
+    super.key,
+    required this.text,
+    this.icon = Icons.info_outline,
+    this.kind = VetBadgeKind.information,
+  });
+  final String text;
+  final IconData icon;
+  final VetBadgeKind kind;
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final color = switch (kind) {
+      VetBadgeKind.information => scheme.primary,
+      VetBadgeKind.success => VetColors.success,
+      VetBadgeKind.warning => VetColors.warning,
+      VetBadgeKind.danger => scheme.error,
+      VetBadgeKind.unverified => scheme.onSurfaceVariant,
+    };
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: .22)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(text, style: Theme.of(context).textTheme.bodyMedium),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Un valor de referencia con su procedencia.
+///
+/// Un mismo dato clinico suele tener mas de una referencia legitima segun la
+/// fuente, la edad o el manejo: la frecuencia cardiaca del perro adulto no es
+/// la del cachorro, y la lactancia porcina son 21 dias en NRC 2012 y 28 en el
+/// ciclo de clase. Mezclarlas en una sola cifra pierde informacion; elegir una
+/// por el usuario decide por el. Se muestran todas, cada una con su cita.
+class VetReferenceValue {
+  const VetReferenceValue(this.value, {this.qualifier, this.source});
+
+  /// El rango o la cifra, ya formateado: «60 – 140 lpm», «21 d».
+  final String value;
+
+  /// A que caso aplica, si no es el general: «Cachorros», «Razas gigantes».
+  final String? qualifier;
+
+  /// De donde sale este valor en concreto, no el bloque entero.
+  final String? source;
+}
+
+/// Un dato con sus referencias.
+class VetReferenceRow {
+  const VetReferenceRow({
+    required this.label,
+    required this.values,
+    this.icon,
+    this.note,
+  });
+  final String label;
+  final List<VetReferenceValue> values;
+  final IconData? icon;
+  final String? note;
+}
+
+/// Tarjeta de valores de referencia, para mostrar bajo un resultado.
+///
+/// La cita va en letra pequena y pegada a su valor, no al pie de la tarjeta:
+/// con una sola nota al final no se sabe que dato viene de donde, que es justo
+/// lo que hay que poder distinguir cuando las fuentes no concuerdan.
+class VetReferenceCard extends StatelessWidget {
+  const VetReferenceCard({
+    super.key,
+    required this.title,
+    required this.rows,
+    this.subtitle,
+    this.badge = 'Valores de referencia',
+    this.badgeKind = VetBadgeKind.unverified,
+  });
+  final String title;
+  final String? subtitle;
+  final List<VetReferenceRow> rows;
+  final String? badge;
+  final VetBadgeKind badgeKind;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final tenue = Theme.of(context).colorScheme.onSurfaceVariant;
+    return VetCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: textTheme.titleMedium),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle!,
+                        style: textTheme.bodySmall?.copyWith(color: tenue),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (badge != null) ...[
+                const SizedBox(width: 8),
+                VetStatusBadge(label: badge!, kind: badgeKind),
+              ],
+            ],
+          ),
+          const SizedBox(height: 12),
+          for (final row in rows)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      if (row.icon != null) ...[
+                        Icon(row.icon, size: 18, color: tenue),
+                        const SizedBox(width: 6),
+                      ],
+                      Expanded(
+                        child: Text(row.label, style: textTheme.titleSmall),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  for (final ref in row.values)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2, left: 2),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text.rich(
+                            TextSpan(
+                              children: [
+                                if (ref.qualifier != null)
+                                  TextSpan(
+                                    text: '${ref.qualifier}: ',
+                                    style: textTheme.bodyMedium?.copyWith(
+                                      color: tenue,
+                                    ),
+                                  ),
+                                TextSpan(
+                                  text: ref.value,
+                                  style: textTheme.bodyMedium,
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (ref.source != null)
+                            Text(
+                              ref.source!,
+                              style: textTheme.labelSmall?.copyWith(
+                                color: tenue,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  if (row.note != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      row.note!,
+                      style: textTheme.bodySmall?.copyWith(color: tenue),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }

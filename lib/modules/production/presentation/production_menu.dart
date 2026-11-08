@@ -2,7 +2,7 @@ import '../../../core/widgets/accent_glow.dart';
 import 'package:flutter/material.dart';
 import '../../../vet_ui/vet_components.dart';
 import '../../../vet_ui/vet_theme.dart';
-import 'growth_panel.dart';
+import 'porcino_panels.dart';
 import 'feeding_panel.dart';
 import '../../aviculture/presentation/aviculture_screen.dart';
 import '../../incubation/presentation/incubation_screen.dart';
@@ -271,10 +271,13 @@ class _ProductionMenuState extends State<ProductionMenu> {
         const SizedBox(height: 16),
         if (allowed('Cálculos clínicos')) const FeedingPanel() else denied,
       ],
-      if (species == 'Porcinos' && activity == 'Crecimiento y engorda') ...[
+      if (species == 'Porcinos' && activity != null) ...[
         const SizedBox(height: 16),
         if (allowed('Cálculos clínicos'))
-          GrowthPanel(showCosts: allowed('Planeación financiera'))
+          ...porcinoPanelsFor(
+            activity!,
+            showCosts: allowed('Planeación financiera'),
+          )
         else
           denied,
       ],

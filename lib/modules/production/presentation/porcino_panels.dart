@@ -1534,10 +1534,15 @@ class _PorcinoInvestmentPanelState extends State<PorcinoInvestmentPanel> {
             ListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(item.concept, style: textTheme.titleSmall),
+              // El renglon muestra de donde sale su subtotal, no solo el
+              // numero: con un concepto suelto el subtotal y el total valen
+              // lo mismo y, sin el desglose, no se sabe cual es cual.
               subtitle: Text(
                 item.hasPrice
-                    ? '${_fmt(item.quantity, 2)} ${item.unit} · ${_money(item.midCents!)}'
-                        '${item.isManual ? '' : ' (mediana de ${item.estimate!.used})'}'
+                    ? '${_fmt(item.quantity, 2)} ${item.unit} × '
+                          '${_money(item.unitMidCents!)}'
+                          '${item.isManual ? '' : ' (mediana de ${item.estimate!.used})'}'
+                          ' = ${_money(item.midCents!)}'
                     : '${_fmt(item.quantity, 2)} ${item.unit} · sin precio',
                 style: textTheme.bodySmall,
               ),

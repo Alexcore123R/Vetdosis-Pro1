@@ -154,3 +154,38 @@ idempotente y `delete` de reversa por `batch_id`.
 La hoja «Bloqueos» marca como **CRÍTICA** un `DROP TABLE CASCADE` sobre cuatro
 tablas en `Qwen_sql_20261021_ubnp72mtw.sql`, con la instrucción de no
 ejecutarlo. Queda registrado en la base al cargar `15N`.
+
+## Ejecutado el 8 nov 2026
+
+Las 1.487 filas están cargadas en `vetdosis_reference_staging.raw_intake_rows`,
+todas con `review_state = 'pending'`. La tabla pasa de 1.087 a **2.574 filas**.
+
+| Lote | Filas | Hojas |
+|---|---|---|
+| `constantes_p60_v1_20261108` | 16 | 1 |
+| `cruce_senasica_gi_20261108` | 471 | 1 |
+| `vademecum_verificado_662_20261108` | 662 | 1 |
+| `lote8_hojas_restantes_20261108` | 338 | 8 |
+
+**Verificado contra los archivos de origen, celda por celda: 1.487 filas, 0
+celdas distintas, 0 faltantes, 0 sobrantes.**
+
+Reparto del lote 8: Ajustes esquema 61, Bloqueos 16, Conflictos 34, Cotejo
+capturas 20, Exóticos complementos 166, Fuentes y evidencia 10, LEEME 23,
+Siguiente fase 8.
+
+Del cruce SENASICA: 438 `SIN_COINCIDENCIA`, 30 `PROBABLE`, 3 `CONFLICTO`. Ni
+una coincidencia exacta, porque el vademécum no guarda número de registro
+sanitario. Las 30 probables van por nombre más fabricante, con su puntuación.
+
+No se tocó `commercial_product_enrichment`, ni `public.Fármacos`, ni ninguna
+tabla que lea la app.
+
+### Un fallo que conviene no repetir
+
+Los tres SQL calculaban el hash con `p::text::bytea`, que interpreta las barras
+invertidas del texto como secuencias de escape: `22P02 invalid input syntax for
+type bytea` en los dos archivos que traían barras. Corregido a
+`convert_to(p::text, 'UTF8')`, que es la conversión correcta de texto a bytes.
+El de lote 8 pasó por casualidad, porque ninguna de sus 338 filas tenía una
+barra invertida.

@@ -25,7 +25,7 @@ with k as (select '{"Estado": "Datos verificados", "Responsable": "Grok"}'::json
 insert into vetdosis_reference_staging.raw_intake_rows (batch_id,row_key,source_filename,source_sheet,source_row,source_title,original_payload,row_sha256,review_state,ingestion_note)
 select 'b2d8f3c1-6a54-4f92-8e37-1d2c5b0f4a26', 'vademecum_verificado_662_20261108:VetDosis_verificado_completo:row:'||(e->>'_r'), 'VetDosis_verificado_completo-1.csv', 'VetDosis_verificado_completo',
        (e->>'_r')::int, nullif(left(p->>'Grupo_verificacion',400),''), p,
-       encode(sha256(p::text::bytea),'hex'), 'pending',
+       encode(sha256(convert_to(p::text,'UTF8')),'hex'), 'pending',
        'Imported verbatim; not clinically validated'
 from k, jsonb_array_elements($vd$[
 {"Fabricante (índice)": "SANFER, S.A. DE C.V., LABORATORIOS", "Ficha original PLM": "https://www.diccionarioveterinarioplm.com/electroidi_gel-76-15391-134-43-2", "Forma farmacéutica": "Gel oral", "Grupo_verificacion": "VERIFICACION_GRUPO_SANFER.md", "Ingredientes (índice)": "ÁCIDO FÓLICO. BICARBONATO DE SODIO. CLORURO DE CALCIO. CLORURO DE POTASIO. CLORURO DE SODIO. D-PANTOTENATO DE CALCIO. NICOTINAMIDA. PANTOTENATO DE CALCIO. SULFATO DE MAGNESIO. VITAMINA A. VITAMINA B1. VITAMINA B1 (TIAMINA). VITAMINA B12 (CIANOCOBALAMINA). VITAMINA B2  (RIBOFLAVINA). VITAMINA B6 (PIRIDOXINA). VITAMINA D3. VITAMINA E. VITAMINA K3 .", "Notas": "Verificado en grupo. Detalles, notas de edición y URLs consultadas en VERIFICACION_GRUPO_SANFER.md. Actualizado 2026-10-26.", "Producto": "ELECTROIDI GEL", "URL_fuente_principal": "https://www.diccionarioveterinarioplm.com/electroidi_gel-76-15391-134-43-2", "_r": "2"},

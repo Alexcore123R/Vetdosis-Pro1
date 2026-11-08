@@ -21,7 +21,7 @@ with k as (select '{"fecha_actualizacion_datos": "2025-08-22", "fuente_padron": 
 insert into vetdosis_reference_staging.raw_intake_rows (batch_id,row_key,source_filename,source_sheet,source_row,source_title,original_payload,row_sha256,review_state,ingestion_note)
 select 'a1c7e2b0-5f43-4e81-9d26-7c0b4a9e3f15', 'cruce_senasica_gi_20261108:vetdosis_cruce_senasica_grupo_I:row:'||(e->>'_r'), 'vetdosis_cruce_senasica_grupo_I.csv', 'vetdosis_cruce_senasica_grupo_I',
        (e->>'_r')::int, nullif(left(p->>'fuente_padron',400),''), p,
-       encode(sha256(p::text::bytea),'hex'), 'pending',
+       encode(sha256(convert_to(p::text,'UTF8')),'hex'), 'pending',
        'Imported verbatim; not clinically validated'
 from k, jsonb_array_elements($vd$[
 {"_r": "2", "estado_cruce": "SIN_COINCIDENCIA", "evidencia": "sin match por nombre comercial normalizado", "ficha_plm": "", "id_fuente": "SENASICA-GI-0001", "nombre_producto_normalizado": "SINCROLER", "nombre_producto_original": "Sincroler", "numero_registro_normalizado": "Q 0970 042", "numero_registro_original": "Q-0970-042", "observaciones": "", "producto_comercial_fabricante": "", "producto_comercial_nombre": "", "producto_vetdosis_ref": "", "razon_social_normalizada": "ADLER PHARMA S DE R L DE C V", "razon_social_original": "Adler Pharma, S. de R.L. de C.V."},

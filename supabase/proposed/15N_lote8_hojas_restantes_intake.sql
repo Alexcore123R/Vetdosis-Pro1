@@ -25,7 +25,7 @@ insert into vetdosis_reference_staging.raw_intake_rows (batch_id,row_key,source_
 select 'c3e9a4d2-7b65-4a03-9f48-2e3d6c1a5b37', 'lote8_hojas_restantes_20261108:LEEME:row:'||(e->>'_r'),
        'VetDosis_lote8_auditoria_laboratorio_constantes_20261021.xlsx',
        'LEEME', (e->>'_r')::int, null, p,
-       encode(sha256(p::text::bytea),'hex'), 'pending',
+       encode(sha256(convert_to(p::text,'UTF8')),'hex'), 'pending',
        'Imported verbatim; not clinically validated'
 from jsonb_array_elements($vd$[
 {"Resultado / alcance": "VetDosis | Auditoría técnica de laboratorio y constantes", "Tema": "Proyecto", "_r": "2"},
@@ -59,7 +59,7 @@ insert into vetdosis_reference_staging.raw_intake_rows (batch_id,row_key,source_
 select 'c3e9a4d2-7b65-4a03-9f48-2e3d6c1a5b37', 'lote8_hojas_restantes_20261108:Bloqueos:row:'||(e->>'_r'),
        'VetDosis_lote8_auditoria_laboratorio_constantes_20261021.xlsx',
        'Bloqueos', (e->>'_r')::int, null, p,
-       encode(sha256(p::text::bytea),'hex'), 'pending',
+       encode(sha256(convert_to(p::text,'UTF8')),'hex'), 'pending',
        'Imported verbatim; not clinically validated'
 from jsonb_array_elements($vd$[
 {"Acción requerida": "No ejecutar; preservar pacientes y referencias previas", "Estado": "SIN EJECUTAR", "ID": "B01", "Localización": "Qwen_sql_20261021_ubnp72mtw.sql, líneas 4-7", "Objeto": "SQL inicial", "Prioridad": "CRÍTICA", "Problema": "DROP TABLE CASCADE (4 tablas)", "_r": "2", "Área": "Integridad de datos"},
@@ -86,7 +86,7 @@ insert into vetdosis_reference_staging.raw_intake_rows (batch_id,row_key,source_
 select 'c3e9a4d2-7b65-4a03-9f48-2e3d6c1a5b37', 'lote8_hojas_restantes_20261108:Conflictos:row:'||(e->>'_r'),
        'VetDosis_lote8_auditoria_laboratorio_constantes_20261021.xlsx',
        'Conflictos', (e->>'_r')::int, null, p,
-       encode(sha256(p::text::bytea),'hex'), 'pending',
+       encode(sha256(convert_to(p::text,'UTF8')),'hex'), 'pending',
        'Imported verbatim; not clinically validated'
 from jsonb_array_elements($vd$[
 {"Categoría": "constante", "Comparación": "DISTINTA UNIDAD/BASE", "Compatibilidad": "NO CONVERSIÓN AUTOMÁTICA", "Especie": "Canino", "Fuente A": "Slideshare", "Fuente B": "Manual Anestesia Peq. Animales", "ID": "C001", "Línea SQL A": "252", "Línea SQL B": "264", "Max A": "1", "Max B": "2", "Min A": "0.25", "Min B": "1", "Parámetro": "Producción de orina", "Prioridad": "ALTA", "Publicación": "NO ACTIVAR INTERPRETACIÓN AUTOMÁTICA", "Tipo": "FIS", "Tratamiento": "NO comparar L/día con mL/kg/h sin peso y periodo; condiciones distintas.", "Unidad A": "L/día", "Unidad B": "mL/kg/h", "_r": "2"},
@@ -131,7 +131,7 @@ insert into vetdosis_reference_staging.raw_intake_rows (batch_id,row_key,source_
 select 'c3e9a4d2-7b65-4a03-9f48-2e3d6c1a5b37', 'lote8_hojas_restantes_20261108:Ajustes esquema:row:'||(e->>'_r'),
        'VetDosis_lote8_auditoria_laboratorio_constantes_20261021.xlsx',
        'Ajustes esquema', (e->>'_r')::int, null, p,
-       encode(sha256(p::text::bytea),'hex'), 'pending',
+       encode(sha256(convert_to(p::text,'UTF8')),'hex'), 'pending',
        'Imported verbatim; not clinically validated'
 from jsonb_array_elements($vd$[
 {"Código": "U-NULL", "Entrada original": "NULL", "Especie": "Canino", "Estado": "BLOQUEO SQL", "Línea SQL": "300", "Parámetro": "pH sanguíneo", "Problema detectado": "No sustituir ciegamente; columna unidad es NOT NULL.", "Tipo": "FIS", "Tratamiento candidato": "adimensional", "_r": "2"},
@@ -203,7 +203,7 @@ insert into vetdosis_reference_staging.raw_intake_rows (batch_id,row_key,source_
 select 'c3e9a4d2-7b65-4a03-9f48-2e3d6c1a5b37', 'lote8_hojas_restantes_20261108:Cotejo capturas:row:'||(e->>'_r'),
        'VetDosis_lote8_auditoria_laboratorio_constantes_20261021.xlsx',
        'Cotejo capturas', (e->>'_r')::int, null, p,
-       encode(sha256(p::text::bytea),'hex'), 'pending',
+       encode(sha256(convert_to(p::text,'UTF8')),'hex'), 'pending',
        'Imported verbatim; not clinically validated'
 from jsonb_array_elements($vd$[
 {"Alcance": "Cotejo con captura, NO validación de intervalo clínico", "Analito": "Creatinina", "Archivo imagen": "1000296890.jpg", "Conversión": "Sin conversión", "Cotejo": "Coincide transcripción", "Especie": "Canino", "Línea SQL": "792", "Máx. SQL": "1.5", "Máx. foto": "1.5", "Mín. SQL": "0.5", "Mín. foto": "0.5", "Origen foto": "Labforvets", "Unidad SQL": "mg/dL", "Unidad foto": "mg/dL", "_r": "2"},
@@ -234,7 +234,7 @@ insert into vetdosis_reference_staging.raw_intake_rows (batch_id,row_key,source_
 select 'c3e9a4d2-7b65-4a03-9f48-2e3d6c1a5b37', 'lote8_hojas_restantes_20261108:Exóticos complementos:row:'||(e->>'_r'),
        'VetDosis_lote8_auditoria_laboratorio_constantes_20261021.xlsx',
        'Exóticos complementos', (e->>'_r')::int, null, p,
-       encode(sha256(p::text::bytea),'hex'), 'pending',
+       encode(sha256(convert_to(p::text,'UTF8')),'hex'), 'pending',
        'Imported verbatim; not clinically validated'
 from jsonb_array_elements($vd$[
 {"Archivo": "VetDosis_candidatos_adicionales_no_validados.csv", "Especie": "Hámster no especificado", "Estado": "Transcrito; revisión veterinaria pendiente", "Fila": "2", "Grupo": "Fisiología", "Máx.": "37.6", "Mín.": "37.6", "Obra": "Manejo y tratamiento de los animales exóticos (fragmento escaneado)", "Observación": "Taxón ambiguo: no homologar especies", "Parámetro": "Temperatura rectal", "Página PDF": "1", "Tabla": "2.1", "Taxón según fuente": "Hámster (especie no precisada en la tabla)", "Unidad": "°C", "_r": "2"},
@@ -411,7 +411,7 @@ insert into vetdosis_reference_staging.raw_intake_rows (batch_id,row_key,source_
 select 'c3e9a4d2-7b65-4a03-9f48-2e3d6c1a5b37', 'lote8_hojas_restantes_20261108:Fuentes y evidencia:row:'||(e->>'_r'),
        'VetDosis_lote8_auditoria_laboratorio_constantes_20261021.xlsx',
        'Fuentes y evidencia', (e->>'_r')::int, null, p,
-       encode(sha256(p::text::bytea),'hex'), 'pending',
+       encode(sha256(convert_to(p::text,'UTF8')),'hex'), 'pending',
        'Imported verbatim; not clinically validated'
 from jsonb_array_elements($vd$[
 {"Documento/archivo": "Qwen_sql_20261021_ubnp72mtw.sql", "Limitación": "Incluye posibles borrados; NO EJECUTAR", "Qué respalda": "505 registros SQL parseados", "Tipo": "Archivo proporcionado por Ale", "URL / origen": "N/A", "_r": "2"},
@@ -432,7 +432,7 @@ insert into vetdosis_reference_staging.raw_intake_rows (batch_id,row_key,source_
 select 'c3e9a4d2-7b65-4a03-9f48-2e3d6c1a5b37', 'lote8_hojas_restantes_20261108:Siguiente fase:row:'||(e->>'_r'),
        'VetDosis_lote8_auditoria_laboratorio_constantes_20261021.xlsx',
        'Siguiente fase', (e->>'_r')::int, null, p,
-       encode(sha256(p::text::bytea),'hex'), 'pending',
+       encode(sha256(convert_to(p::text,'UTF8')),'hex'), 'pending',
        'Imported verbatim; not clinically validated'
 from jsonb_array_elements($vd$[
 {"Entrega / criterio": "Conservar 505 registros originales, 34 grupos, 10 NULL, 4 errores de columna", "Estado": "COMPLETADO (automatizado)", "Etapa": "1", "_r": "2", "Área": "Auditoría documental"},

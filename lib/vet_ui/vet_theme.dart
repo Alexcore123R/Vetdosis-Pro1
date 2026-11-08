@@ -43,6 +43,16 @@ abstract final class VetColors {
 }
 
 abstract final class VetTheme {
+  /// Familia de la interfaz: Plus Jakarta Sans, la que el propio tema ya
+  /// pedia en un comentario desde antes («cargar Plus Jakarta Sans como
+  /// recurso local si se dispone de ella»).
+  ///
+  /// Es de trazo marcado y formas redondas, que es justo lo que le faltaba a
+  /// la de sistema para que un titulo en w800 se vea como titulo y un dato
+  /// pequeno siga legible. Va empaquetada, no descargada: la app trabaja en
+  /// clinica y no puede depender de la red para pintar texto.
+  static const fontFamily = 'PlusJakartaSans';
+
   /// Escala tipografica de la app.
   ///
   /// Existe porque no habia ninguna: el tema vivo (core/app.dart) nunca
@@ -71,9 +81,16 @@ abstract final class VetTheme {
   /// en oscuro) y de [scheme], no de constantes: una escala con el color
   /// fijado se ve bien en un modo y se pierde en el otro.
   static TextTheme textTheme(Brightness brightness, ColorScheme scheme) {
-    final base = brightness == Brightness.dark
-        ? Typography.material2021().white
-        : Typography.material2021().black;
+    final base =
+        (brightness == Brightness.dark
+                ? Typography.material2021().white
+                : Typography.material2021().black)
+            .apply(fontFamily: fontFamily);
+    // Tres tonos de texto, no uno. Lo que se lee primero va al tono fuerte;
+    // lo que acompana, al medio; la indicacion, al suave y en cuerpo chico.
+    // Antes todo compartia el mismo tono y por eso el texto se veia
+    // disperso: nada decia que mirar primero.
+    final apoyo = scheme.onSurfaceVariant;
     return base.copyWith(
       headlineLarge: base.headlineLarge?.copyWith(
         fontSize: 30,
@@ -110,7 +127,7 @@ abstract final class VetTheme {
       bodySmall: base.bodySmall?.copyWith(
         fontSize: 12,
         height: 1.45,
-        color: scheme.onSurfaceVariant,
+        color: apoyo,
       ),
       labelLarge: base.labelLarge?.copyWith(
         fontSize: 14,
@@ -125,6 +142,7 @@ abstract final class VetTheme {
         fontSize: 11,
         fontWeight: FontWeight.w600,
         letterSpacing: .3,
+        color: apoyo,
       ),
     );
   }
@@ -148,8 +166,7 @@ abstract final class VetTheme {
       useMaterial3: true,
       colorScheme: colors,
       scaffoldBackgroundColor: VetColors.canvas,
-      fontFamily:
-          null, // Cargar Plus Jakarta Sans como recurso local si se dispone de ella.
+      fontFamily: fontFamily,
       // La escala vive en un solo sitio: antes esta copia y el tema vivo de
       // core/app.dart podian separarse, y de hecho el tema vivo no tenia
       // ninguna.

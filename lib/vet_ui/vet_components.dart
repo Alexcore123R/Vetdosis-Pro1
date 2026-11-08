@@ -419,9 +419,12 @@ class VetSectionHeader extends StatelessWidget {
         Text(title, style: titleStyle),
         if (subtitle != null) ...[
           const SizedBox(height: 4),
+          // La indicacion va chica y en otro tono, no solo en otra linea.
+          // Con el mismo cuerpo y el mismo gris que el resto, el titulo y su
+          // explicacion se leian como un bloque y no como dos cosas.
           Text(
             subtitle!,
-            style: textTheme.bodyMedium?.copyWith(color: supportColor),
+            style: textTheme.bodySmall?.copyWith(color: supportColor),
           ),
         ],
       ],

@@ -167,6 +167,11 @@ void main() {
     }
 
     await agregar('Ventilador', '4', '1200');
+    expect(find.text('Total estimado'), findsOneWidget);
+    // El renglon lleva el desglose completo y el total va solo con la cifra,
+    // asi que find.text, que compara exacto, distingue uno de otro. Antes no:
+    // con un concepto suelto los dos decian «4 800.00 MXN» y nada mas.
+    expect(find.textContaining('× 1 200.00 MXN = 4 800.00 MXN'), findsOneWidget);
     expect(find.text('4 800.00 MXN'), findsOneWidget);
 
     // Un concepto sin precio no entra al total, y la pantalla lo dice.

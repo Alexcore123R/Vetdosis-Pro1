@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../vet_ui/vet_components.dart';
 import '../../../vet_ui/vet_theme.dart';
+import '../../finance/domain/investment_estimate.dart';
 import '../domain/porcino_calculators.dart';
 import '../domain/porcino_capacity.dart';
 import '../domain/porcino_reference.dart';
@@ -76,6 +77,18 @@ List<Widget> porcinoPanelsFor(String activity, {required bool showCosts}) {
         title: 'Referencias de crecimiento y engorda',
         rows: porcinoGrowingReference,
       ),
+    ],
+    'Planeación financiera' => [
+      notice,
+      if (showCosts)
+        const PorcinoInvestmentPanel()
+      else
+        const VetNotice(
+          text:
+              'La estimación de inversión requiere el permiso de Planeación financiera.',
+          icon: Icons.lock_outline,
+          kind: VetBadgeKind.warning,
+        ),
     ],
     'Bioseguridad y ambiente' => [
       notice,
@@ -1363,6 +1376,210 @@ class _PorcinoNitrogenPanelState extends State<PorcinoNitrogenPanel> {
           Text(
             'Fuente: Dictamen Diagnóstico Ambiental de la Actividad Porcícola en Yucatán (SEMARNAT, marzo 2023), p. 84-86. Método de Mekonnen y Hoekstra (2016).',
             style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Precios cotizados de un concepto, en centavos de MXN.
+///
+/// Se separan con punto y coma y no con coma porque la coma ya vale como
+/// separador decimal en el resto de los campos: «1,5» es uno y medio. Con
+/// coma, «1200,1350» seria ambiguo.
+List<int> parseQuotedPrices(String raw) {
+  final out = <int>[];
+  for (final piece in raw.split(';')) {
+    final trimmed = piece.trim();
+    if (trimmed.isEmpty) continue;
+    if (!RegExp(r'^\d+(?:[.,]\d+)?$').hasMatch(trimmed)) {
+      throw FormatException(
+        'Precios: números separados por punto y coma, por ejemplo 1200; 1350.',
+      );
+    }
+    final pesos = double.parse(trimmed.replaceAll(',', '.'));
+    if (pesos <= 0) throw const FormatException('Precios: mayores que 0.');
+    out.add((pesos * 100).round());
+  }
+  return out;
+}
+
+String _money(int cents) {
+  final pesos = cents / 100;
+  final entero = _int(pesos.truncateToDouble());
+  final centavos = (cents.abs() % 100).toString().padLeft(2, '0');
+  return '$entero.$centavos MXN';
+}
+
+/// Estimado de inversión en equipo y materiales para la granja.
+///
+/// Los precios se capturan a mano: no hay búsqueda de precios en la app, y
+/// mientras no la haya este panel no la finge. Con una sola cotización por
+/// concepto el precio es ese y el rango se cierra; con varias se toma la
+/// mediana y el rango intercuartil, y con cuatro o más se descartan los
+/// valores muy alejados, que suelen ser otra unidad o un error de captura.
+class PorcinoInvestmentPanel extends StatefulWidget {
+  const PorcinoInvestmentPanel({super.key});
+  @override
+  State<PorcinoInvestmentPanel> createState() => _PorcinoInvestmentPanelState();
+}
+
+class _PorcinoInvestmentPanelState extends State<PorcinoInvestmentPanel> {
+  final concept = TextEditingController();
+  final unit = TextEditingController(text: 'pieza');
+  final quantity = TextEditingController(text: '1');
+  final prices = TextEditingController();
+  final items = <InvestmentItem>[];
+  String? error;
+
+  @override
+  void dispose() {
+    for (final c in [concept, unit, quantity, prices]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  void add() {
+    setState(() {
+      error = null;
+      try {
+        final quoted = parseQuotedPrices(prices.text);
+        items.add(
+          InvestmentItem(
+            concept: concept.text.trim(),
+            unit: unit.text.trim(),
+            quantity: _decimal(quantity, 'Cantidad'),
+            manualUnitCents: quoted.length == 1 ? quoted.single : null,
+            estimate: quoted.length > 1
+                ? PriceEstimate.fromSamples([
+                    for (final (i, c) in quoted.indexed)
+                      PriceSample(c, source: 'Cotización ${i + 1}'),
+                  ])
+                : null,
+          ),
+        );
+        concept.clear();
+        prices.clear();
+        quantity.text = '1';
+      } on FormatException catch (e) {
+        error = e.message;
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final plan = items.isEmpty ? null : InvestmentPlan(items);
+    return VetCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const _PanelHeader(
+            icon: Icons.request_quote_outlined,
+            title: 'Estimado de inversión en equipo',
+            subtitle:
+                'Lista de compras con los precios que tú cotices. No consulta precios en línea.',
+          ),
+          _Field(
+            controller: concept,
+            label: 'Concepto',
+            helper: 'Por ejemplo: ventilador de 36 pulgadas',
+            onChanged: () {},
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: _Field(
+                  controller: unit,
+                  label: 'Unidad',
+                  onChanged: () {},
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _Field(
+                  controller: quantity,
+                  label: 'Cantidad',
+                  decimal: true,
+                  onChanged: () {},
+                ),
+              ),
+            ],
+          ),
+          _Field(
+            controller: prices,
+            label: 'Precios cotizados por unidad (MXN)',
+            decimal: true,
+            helper:
+                'Separa varias cotizaciones con punto y coma: 1200; 1350; 1290. '
+                'Déjalo vacío si todavía no tienes precio.',
+            onChanged: () {},
+          ),
+          const SizedBox(height: 8),
+          VetActionButton(
+            icon: Icons.add,
+            label: 'Agregar concepto',
+            onPressed: add,
+          ),
+          if (error != null)
+            VetNotice(
+              text: error!,
+              icon: Icons.error_outline,
+              kind: VetBadgeKind.danger,
+            ),
+          for (final (i, item) in items.indexed)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(item.concept, style: textTheme.titleSmall),
+              subtitle: Text(
+                item.hasPrice
+                    ? '${_fmt(item.quantity, 2)} ${item.unit} · ${_money(item.midCents!)}'
+                        '${item.isManual ? '' : ' (mediana de ${item.estimate!.used})'}'
+                    : '${_fmt(item.quantity, 2)} ${item.unit} · sin precio',
+                style: textTheme.bodySmall,
+              ),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete_outline),
+                tooltip: 'Quitar concepto',
+                onPressed: () => setState(() => items.removeAt(i)),
+              ),
+            ),
+          if (plan != null) ...[
+            _Results([
+              ('Total estimado', _money(plan.midCents)),
+              if (plan.lowCents != plan.highCents)
+                ('Rango', '${_money(plan.lowCents)} – ${_money(plan.highCents)}'),
+              ('Conceptos', '${items.length}'),
+            ]),
+            if (!plan.isComplete)
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: VetNotice(
+                  text:
+                      'El total NO incluye ${plan.unpriced.length} concepto(s) sin precio: '
+                      '${plan.unpriced.map((i) => i.concept).join(', ')}.',
+                  icon: Icons.price_check_outlined,
+                  kind: VetBadgeKind.warning,
+                ),
+              ),
+            if (plan.weak.isNotEmpty)
+              VetNotice(
+                text:
+                    'Con menos de ${PriceEstimate.minReliableSamples} cotizaciones el estimado es débil: '
+                    '${plan.weak.map((i) => i.concept).join(', ')}.',
+                icon: Icons.help_outline,
+                kind: VetBadgeKind.unverified,
+              ),
+          ],
+          const SizedBox(height: 10),
+          Text(
+            'Cada precio que captures cuenta como una cotización distinta. Es un '
+            'estimado de planeación con tus propios precios, no una cotización '
+            'formal ni un precio de mercado verificado.',
+            style: textTheme.bodySmall,
           ),
         ],
       ),

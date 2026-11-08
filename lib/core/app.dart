@@ -364,10 +364,11 @@ class VetDosisApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: Listenable.merge([model, ?auth]),
+    // Keep MaterialApp (and its Navigator/Element tree) stable across
+    // auth and clinic updates. Re-keying it here disposed and recreated the
+    // whole app subtree during ListenableBuilder notifications, which could
+    // invalidate inherited dependencies while Flutter was rebuilding.
     builder: (context, _) => MaterialApp(
-      key: ValueKey(
-        '${auth?.active?.userId}:${auth?.active?.clinicId}:${auth?.active?.role.name}:${auth?.signedIn}',
-      ),
       title: 'VetDosis Pro',
       locale: const Locale('es', 'MX'),
       supportedLocales: const [Locale('es', 'MX')],

@@ -57,7 +57,17 @@ void main() {
       );
       final theme = Theme.of(tester.element(drawer));
       expect(theme.drawerTheme.backgroundColor, theme.colorScheme.surface);
-      expect(theme.colorScheme.primary, const Color(0xFF087F83));
+      // El primary sale de la semilla del tema elegido en Ajustes, no de una
+      // constante. Antes esta linea fijaba #087F83, que era el color que el
+      // neu llevaba puesto a mano, y por eso no se enteraba de que el selector
+      // de tema no hacia nada: daba igual el tono elegido, siempre salia ese.
+      expect(
+        theme.colorScheme.primary,
+        ColorScheme.fromSeed(
+          seedColor: paletteColors[core.settings.palette],
+          brightness: theme.brightness,
+        ).primary,
+      );
       tester.state<ScaffoldState>(find.byType(Scaffold).first).closeDrawer();
       await tester.pumpAndSettle();
       expect(

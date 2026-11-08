@@ -88,13 +88,27 @@ import '../modules/core/presentation/core_view_model.dart';
 import '../modules/auth/presentation/auth_view_model.dart';
 import '../modules/auth/presentation/auth_screen.dart';
 
-const paletteNames = ['Esmeralda', 'Océano', 'Índigo', 'Ámbar', 'Obsidiana'];
+/// Los cinco temas del selector de Ajustes, con nombre y semilla.
+///
+/// Antes eran colores de catalogo (esmeralda, oceano, indigo, ambar,
+/// obsidiana) ajenos a la familia de la marca, asi que al elegir uno la app
+/// dejaba de parecerse a si misma. Ahora los cinco salen de [VetColors].
+///
+/// El indice 0 conserva el verdeazulado exacto que el neu tenia fijado a mano
+/// (#087F83), para que a quien no haya tocado el selector no le cambie nada:
+/// es el valor por defecto de [AppSettings.palette].
+///
+/// Son SEMILLAS, no colores finales. Material 3 deriva de cada una un
+/// `primary` y un `onPrimary` que contrastan entre si, que es lo que exige
+/// `platform_review_test` a las cinco paletas en los dos brillos. De ahi que
+/// aqui puedan convivir tonos claros de marca con uno oscuro.
+const paletteNames = ['Turquesa', 'Cielo', 'Lila', 'Violeta', 'Menta'];
 const paletteColors = [
-  Color(0xFF087F68),
-  Color(0xFF126AAB),
-  Color(0xFF6254AE),
-  Color(0xFF946000),
-  Color(0xFF52606D),
+  Color(0xFF087F83),
+  VetColors.brandSky,
+  VetColors.brandLilac,
+  VetColors.purple,
+  VetColors.mint,
 ];
 
 /// Raiz de la aplicacion: arma el tema, decide si hay que autenticar y
@@ -167,29 +181,31 @@ class VetDosisApp extends StatelessWidget {
     final surface = dark
         ? VetColors.darkSurface
         : (neumorphic ? neuBackground : VetColors.surface);
-    final primary = dark
-        ? const Color(0xFF55E2D3)
-        : (neumorphic ? const Color(0xFF087F83) : VetColors.purple);
-    final secondary = dark
-        ? const Color(0xFFB69BFF)
-        : (neumorphic ? neuLavender : VetColors.turquoise);
-    final tertiary = dark ? const Color(0xFFFF92C9) : VetColors.lavender;
+    // El tono elegido en Ajustes es la semilla del esquema, TAMBIEN en neu.
+    //
+    // Antes el neu ignoraba por completo model.settings.palette: sembraba con
+    // un color fijo y encima machacaba primary, onPrimary, secondary y
+    // tertiary con constantes. El selector de «Elige tu tema» guardaba el
+    // indice, pintaba su chip como elegido y no cambiaba ni un pixel. Y como
+    // visualStyle viene en 'neu' de fabrica, no cambiaba para nadie.
+    //
+    // Fijar primary a mano era ademas lo que impedia que platform_review_test
+    // comprobara algo: recorre las cinco paletas exigiendo 4.5:1 entre primary
+    // y onPrimary, y las cinco le devolvian el mismo color. Al sembrar de
+    // verdad, esa prueba pasa a medir las cinco.
+    //
+    // Lo que el neu si conserva son las SUPERFICIES. El fondo, la placa y la
+    // tinta son el ESTILO y salen de las maquetas de Ale; el acento es otra
+    // decision, y es la que el selector debe mandar.
     final scheme =
         ColorScheme.fromSeed(
-          seedColor: neumorphic
-              ? primary
-              : paletteColors[model.settings.palette],
+          seedColor: paletteColors[model.settings.palette],
           brightness: brightness,
         ).copyWith(
-          primary: neumorphic ? primary : null,
-          onPrimary: neumorphic
-              ? (dark ? const Color(0xFF062321) : Colors.white)
-              : null,
-          secondary: neumorphic ? secondary : null,
-          tertiary: neumorphic ? tertiary : null,
           surface: neumorphic ? surface : null,
           onSurface: neumorphic && !dark ? neuInk : null,
         );
+    final primary = scheme.primary;
 
     return ThemeData(
       useMaterial3: true,
@@ -236,19 +252,33 @@ class VetDosisApp extends StatelessWidget {
               ),
             )
           : null,
+      // Relieve neu en los botones, desde el tema.
+      //
+      // Antes solo cuatro accesos de Inicio lo llevaban, puestos a mano con un
+      // DecoratedBox alrededor en 486b526. El resto de la app seguia con la
+      // elevacion de Material: una sombra sola hacia abajo, que no es relieve
+      // neu y encima competia con las placas que si lo son. Ahora el degradado
+      // entra por el tema y lo reciben los 155 FilledButton y los 123
+      // OutlinedButton sin tocar una sola llamada.
+      //
+      // Lo que NO puede dar el tema es la sombra exterior: ver neuButtonStyle.
+      //
+      // El OutlinedButton pierde el trazo y gana la placa, que es lo que Ale
+      // pidio para los cuatro accesos; el degradado sale de la superficie y no
+      // del primary porque un boton secundario no debe pesar como el primario.
+      //
+      // El TextButton se queda plano a proposito: es la accion de menor
+      // jerarquia y levantarlo lo igualaria con los otros dos.
       filledButtonTheme: neumorphic
           ? FilledButtonThemeData(
-              style: ButtonStyle(
-                shadowColor: WidgetStatePropertyAll(
-                  primary.withValues(alpha: .28),
-                ),
-                elevation: WidgetStateProperty.resolveWith(
-                  (states) => states.contains(WidgetState.disabled)
-                      ? 0
-                      : states.contains(WidgetState.pressed)
-                      ? 1
-                      : 2,
-                ),
+              style: neuButtonStyle(dark, base: scheme.primary),
+            )
+          : null,
+      outlinedButtonTheme: neumorphic
+          ? OutlinedButtonThemeData(
+              style: neuButtonStyle(dark, base: surface).copyWith(
+                side: const WidgetStatePropertyAll(BorderSide.none),
+                backgroundColor: WidgetStatePropertyAll(surface),
               ),
             )
           : null,

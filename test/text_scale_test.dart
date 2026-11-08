@@ -15,7 +15,7 @@ void main() {
     final modo = brightness.name;
 
     test('En $modo los titulos pesan mas que el cuerpo', () {
-      final cuerpo = scale.bodyMedium!.fontWeight ?? FontWeight.w400;
+      final cuerpo = (scale.bodyMedium!.fontWeight ?? FontWeight.w400).value;
       for (final titulo in [
         scale.headlineLarge!,
         scale.headlineMedium!,
@@ -24,8 +24,8 @@ void main() {
         scale.titleMedium!,
       ]) {
         expect(
-          titulo.fontWeight!.index,
-          greaterThan(cuerpo.index),
+          titulo.fontWeight!.value,
+          greaterThan(cuerpo),
           reason: 'un titulo con el grosor del cuerpo no se lee como titulo',
         );
       }

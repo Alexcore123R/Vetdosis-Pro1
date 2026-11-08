@@ -83,6 +83,77 @@ void main() {
     expect(side, BorderSide.none);
   });
 
+  testWidgets('El secundario se distingue del fondo sin necesitar trazo', (
+    tester,
+  ) async {
+    // La trampa en la que cai al quitarle el borde: le puse de fondo la misma
+    // superficie de la pagina. Sin trazo, sin sombra exterior y del color
+    // exacto del fondo, el boton dejaba de verse como boton. La placa tiene
+    // que ir mas clara que el fondo, que es como se levanta algo en neu.
+    for (final brightness in Brightness.values) {
+      SharedPreferences.setMockInitialValues({});
+      final core = CoreViewModel(SettingsRepository(), const AppSettings());
+      addTearDown(core.dispose);
+      final theme = VetDosisApp(model: core).theme(brightness);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: theme,
+          home: Scaffold(
+            body: OutlinedButton(
+              onPressed: () {},
+              child: const Text('Crear cuenta'),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final placa = tester
+          .widgetList<Material>(
+            find.descendant(
+              of: find.byType(OutlinedButton),
+              matching: find.byType(Material),
+            ),
+          )
+          .first
+          .color;
+      expect(
+        placa,
+        isNot(theme.scaffoldBackgroundColor),
+        reason: 'en ${brightness.name} la placa se confunde con la pagina',
+      );
+    }
+  });
+
+  testWidgets('El degradado respeta la esquina redonda del boton', (
+    tester,
+  ) async {
+    // Lo que se me escapo midiendo solo la forma: el Material resolvia a
+    // radio 24, pero el degradado se pintaba encima en rectangulo y tapaba
+    // las esquinas, asi que el boton se veia cuadrado en pantalla. La
+    // documentacion de backgroundBuilder promete recortar a la forma del
+    // boton y no basta. Se comprueba lo que se pinta, no lo que se declara.
+    await montar(tester, await temaDe(tester, 'neu'));
+    for (final t in [FilledButton, OutlinedButton]) {
+      for (final g in tester
+          .widgetList<DecoratedBox>(
+            find.descendant(
+              of: find.byType(t),
+              matching: find.byType(DecoratedBox),
+            ),
+          )
+          .map((d) => d.decoration)
+          .whereType<BoxDecoration>()
+          .where((d) => d.gradient != null)) {
+        expect(
+          g.borderRadius,
+          isNotNull,
+          reason: 'en $t el degradado se pinta cuadrado sobre una placa '
+              'redonda y le come las esquinas',
+        );
+      }
+    }
+  });
+
   testWidgets('El TextButton se queda plano a proposito', (tester) async {
     await montar(tester, await temaDe(tester, 'neu'));
     // Es la accion de menor jerarquia; levantarla la igualaria con las otras

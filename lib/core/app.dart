@@ -276,10 +276,13 @@ class VetDosisApp extends StatelessWidget {
           : null,
       outlinedButtonTheme: neumorphic
           ? OutlinedButtonThemeData(
-              style: neuButtonStyle(dark, base: surface).copyWith(
-                side: const WidgetStatePropertyAll(BorderSide.none),
-                backgroundColor: WidgetStatePropertyAll(surface),
-              ),
+              style: neuButtonStyle(dark, base: neuRaised(dark, surface))
+                  .copyWith(
+                    side: const WidgetStatePropertyAll(BorderSide.none),
+                    backgroundColor: WidgetStatePropertyAll(
+                      neuRaised(dark, surface),
+                    ),
+                  ),
             )
           : null,
       chipTheme: neumorphic

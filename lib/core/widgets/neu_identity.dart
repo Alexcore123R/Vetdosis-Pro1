@@ -292,6 +292,17 @@ class _NeuPrimaryButtonState extends State<NeuPrimaryButton> {
   }
 }
 
+/// Tono de una placa LEVANTADA sobre [superficie].
+///
+/// En neumorfismo lo que sobresale es mas claro que el fondo y lo hundido mas
+/// oscuro. Sin esa diferencia un boton secundario sin trazo y sin sombra
+/// exterior queda del color exacto de la pagina, o sea invisible: pasa por
+/// texto suelto y se pierde que es pulsable. Medido, no supuesto: el
+/// OutlinedButton resolvia a #EBECF2, el mismo neuBackground.
+Color neuRaised(bool dark, Color superficie) => dark
+    ? const Color(0xFF2A2932)
+    : Color.lerp(superficie, Colors.white, .55)!;
+
 /// Relieve neu para los botones, servido desde el tema.
 ///
 /// El par de sombras del neu no cabe en un [ButtonStyle]: la elevacion de
@@ -324,6 +335,13 @@ ButtonStyle neuButtonStyle(bool dark, {required Color base}) => ButtonStyle(
     final lift = Color.lerp(base, Colors.white, dark ? .07 : .22)!;
     return DecoratedBox(
       decoration: BoxDecoration(
+        // El degradado lleva SU PROPIO radio. La documentacion de
+        // backgroundBuilder dice que lo devuelto se recorta a la forma del
+        // boton, y no basta: medi la forma del Material, salia redonda, y aun
+        // asi el boton se veia cuadrado porque el degradado se pintaba encima
+        // en rectangulo y le tapaba las esquinas. Medir la forma no es medir
+        // lo que se pinta.
+        borderRadius: BorderRadius.circular(24),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,

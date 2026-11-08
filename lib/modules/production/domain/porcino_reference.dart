@@ -5,6 +5,8 @@
 /// no cuentan con validación externa independiente.
 library;
 
+import '../../../vet_ui/vet_components.dart';
+
 const porcinoReferenceSource =
     'Pork School, ago-2026 (material de clase). Extracción: Grok, 6-7 nov 2026. Sin validación externa.';
 
@@ -69,9 +71,18 @@ const porcinoFinishingWeights = [100, 120, 130];
 
 /// Fila de referencia para mostrar: dato, valor y nota breve.
 class PorcinoReferenceRow {
-  const PorcinoReferenceRow(this.label, this.value, {this.note});
+  const PorcinoReferenceRow(
+    this.label,
+    this.value, {
+    this.note,
+    this.referencias,
+  });
   final String label, value;
   final String? note;
+
+  /// Cuando un dato tiene mas de una referencia legitima, cada una con su
+  /// fuente. Si es nulo, [value] es la unica y la cita es la del bloque.
+  final List<VetReferenceValue>? referencias;
 }
 
 const porcinoReproductionReference = [
@@ -82,9 +93,13 @@ const porcinoReproductionReference = [
   ),
   PorcinoReferenceRow(
     'Duración de lactancia',
-    '21 d (NRC 2012) · 28 d (ciclo en clase)',
+    '21 d · 28 d',
     note:
-        'Grok los registra como supuestos de manejo distintos, no como contradicción. Pendiente de definir cuál usa la app.',
+        'Dos supuestos de manejo distintos, no una contradicción. La app muestra ambos con su procedencia en vez de elegir uno.',
+    referencias: [
+      VetReferenceValue('21 días', qualifier: 'Destete temprano', source: 'NRC 2012'),
+      VetReferenceValue('28 días', qualifier: 'Ciclo de clase', source: 'Pork School, ago-2026'),
+    ],
   ),
   PorcinoReferenceRow(
     'Factor 25 (sistema simple)',

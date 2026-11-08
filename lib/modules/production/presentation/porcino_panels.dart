@@ -617,7 +617,12 @@ class _PorcinoSpacePanelState extends State<PorcinoSpacePanel> {
   }
 }
 
-/// Tabla de solo lectura con las referencias de clase y su procedencia.
+/// Referencias de clase, con la cita pegada a cada dato.
+///
+/// Usa el componente compartido VetReferenceCard para que esta tarjeta se vea
+/// y se lea igual que las de cualquier otro modulo. Una fila con varias
+/// referencias las muestra todas con su fuente; una fila con una sola hereda
+/// la cita del bloque.
 class PorcinoReferenceCard extends StatelessWidget {
   const PorcinoReferenceCard({
     super.key,
@@ -627,40 +632,18 @@ class PorcinoReferenceCard extends StatelessWidget {
   final String title;
   final List<PorcinoReferenceRow> rows;
   @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return VetCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Expanded(child: Text(title, style: textTheme.titleMedium)),
-              const VetStatusBadge(
-                label: 'Referencia de clase',
-                kind: VetBadgeKind.unverified,
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          for (final row in rows)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(row.label, style: textTheme.titleSmall),
-                  const SizedBox(height: 2),
-                  Text(row.value, style: textTheme.bodyMedium),
-                  if (row.note != null)
-                    Text(row.note!, style: textTheme.bodySmall),
-                ],
-              ),
-            ),
-          const Divider(),
-          Text(porcinoReferenceSource, style: textTheme.bodySmall),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => VetReferenceCard(
+    title: title,
+    badge: 'Referencia de clase',
+    rows: [
+      for (final row in rows)
+        VetReferenceRow(
+          label: row.label,
+          note: row.note,
+          values:
+              row.referencias ??
+              [VetReferenceValue(row.value, source: porcinoReferenceSource)],
+        ),
+    ],
+  );
 }

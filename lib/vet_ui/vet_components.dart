@@ -446,3 +446,157 @@ class VetNotice extends StatelessWidget {
     );
   }
 }
+
+/// Un valor de referencia con su procedencia.
+///
+/// Un mismo dato clinico suele tener mas de una referencia legitima segun la
+/// fuente, la edad o el manejo: la frecuencia cardiaca del perro adulto no es
+/// la del cachorro, y la lactancia porcina son 21 dias en NRC 2012 y 28 en el
+/// ciclo de clase. Mezclarlas en una sola cifra pierde informacion; elegir una
+/// por el usuario decide por el. Se muestran todas, cada una con su cita.
+class VetReferenceValue {
+  const VetReferenceValue(this.value, {this.qualifier, this.source});
+
+  /// El rango o la cifra, ya formateado: «60 – 140 lpm», «21 d».
+  final String value;
+
+  /// A que caso aplica, si no es el general: «Cachorros», «Razas gigantes».
+  final String? qualifier;
+
+  /// De donde sale este valor en concreto, no el bloque entero.
+  final String? source;
+}
+
+/// Un dato con sus referencias.
+class VetReferenceRow {
+  const VetReferenceRow({
+    required this.label,
+    required this.values,
+    this.icon,
+    this.note,
+  });
+  final String label;
+  final List<VetReferenceValue> values;
+  final IconData? icon;
+  final String? note;
+}
+
+/// Tarjeta de valores de referencia, para mostrar bajo un resultado.
+///
+/// La cita va en letra pequena y pegada a su valor, no al pie de la tarjeta:
+/// con una sola nota al final no se sabe que dato viene de donde, que es justo
+/// lo que hay que poder distinguir cuando las fuentes no concuerdan.
+class VetReferenceCard extends StatelessWidget {
+  const VetReferenceCard({
+    super.key,
+    required this.title,
+    required this.rows,
+    this.subtitle,
+    this.badge = 'Valores de referencia',
+    this.badgeKind = VetBadgeKind.unverified,
+  });
+  final String title;
+  final String? subtitle;
+  final List<VetReferenceRow> rows;
+  final String? badge;
+  final VetBadgeKind badgeKind;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final tenue = Theme.of(context).colorScheme.onSurfaceVariant;
+    return VetCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: textTheme.titleMedium),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle!,
+                        style: textTheme.bodySmall?.copyWith(color: tenue),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (badge != null) ...[
+                const SizedBox(width: 8),
+                VetStatusBadge(label: badge!, kind: badgeKind),
+              ],
+            ],
+          ),
+          const SizedBox(height: 12),
+          for (final row in rows)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      if (row.icon != null) ...[
+                        Icon(row.icon, size: 18, color: tenue),
+                        const SizedBox(width: 6),
+                      ],
+                      Expanded(
+                        child: Text(row.label, style: textTheme.titleSmall),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  for (final ref in row.values)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2, left: 2),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text.rich(
+                            TextSpan(
+                              children: [
+                                if (ref.qualifier != null)
+                                  TextSpan(
+                                    text: '${ref.qualifier}: ',
+                                    style: textTheme.bodyMedium?.copyWith(
+                                      color: tenue,
+                                    ),
+                                  ),
+                                TextSpan(
+                                  text: ref.value,
+                                  style: textTheme.bodyMedium,
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (ref.source != null)
+                            Text(
+                              ref.source!,
+                              style: textTheme.labelSmall?.copyWith(
+                                color: tenue,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  if (row.note != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      row.note!,
+                      style: textTheme.bodySmall?.copyWith(color: tenue),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}

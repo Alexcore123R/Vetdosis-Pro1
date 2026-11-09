@@ -130,6 +130,82 @@ const paletteColors = [
   Color(0xFF52606D),
 ];
 
+/// Mantiene el Navigator estable, pero elimina las rutas privadas cuando
+/// cambia la identidad o el contexto de seguridad de la sesión.
+class SessionRouteGuard extends StatefulWidget {
+  const SessionRouteGuard({
+    super.key,
+    required this.auth,
+    required this.builder,
+  });
+
+  final AuthViewModel? auth;
+  final Widget Function(
+    BuildContext context,
+    GlobalKey<NavigatorState> navigatorKey,
+  ) builder;
+
+  @override
+  State<SessionRouteGuard> createState() => _SessionRouteGuardState();
+}
+
+class _SessionRouteGuardState extends State<SessionRouteGuard> {
+  final GlobalKey<NavigatorState> _navigatorKey =
+      GlobalKey<NavigatorState>();
+  String? _sessionFingerprint;
+
+  String _fingerprint(AuthViewModel? auth) {
+    if (auth == null) return 'no-auth';
+    final member = auth.active;
+    return [
+      auth.repository.userId ?? 'signed-out',
+      auth.signedIn,
+      auth.recoveringPassword,
+      auth.offline,
+      member?.userId ?? '',
+      member?.clinicId ?? '',
+      member?.role.name ?? '',
+    ].join('|');
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _sessionFingerprint = _fingerprint(widget.auth);
+    widget.auth?.addListener(_handleSessionChange);
+  }
+
+  @override
+  void didUpdateWidget(covariant SessionRouteGuard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.auth != widget.auth) {
+      oldWidget.auth?.removeListener(_handleSessionChange);
+      _sessionFingerprint = _fingerprint(widget.auth);
+      widget.auth?.addListener(_handleSessionChange);
+    }
+  }
+
+  void _handleSessionChange() {
+    final next = _fingerprint(widget.auth);
+    if (next == _sessionFingerprint) return;
+    _sessionFingerprint = next;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _navigatorKey.currentState?.popUntil((route) => route.isFirst);
+    });
+  }
+
+  @override
+  void dispose() {
+    widget.auth?.removeListener(_handleSessionChange);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      widget.builder(context, _navigatorKey);
+}
+
 /// Raiz de la aplicacion: arma el tema, decide si hay que autenticar y
 /// entrega los repositorios que cada modulo necesita.
 class VetDosisApp extends StatelessWidget {
@@ -362,13 +438,16 @@ class VetDosisApp extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => ListenableBuilder(
+  Widget build(BuildContext context) => SessionRouteGuard(
+    auth: auth,
+    builder: (context, navigatorKey) => ListenableBuilder(
     listenable: Listenable.merge([model, ?auth]),
     // Keep MaterialApp (and its Navigator/Element tree) stable across
     // auth and clinic updates. Re-keying it here disposed and recreated the
     // whole app subtree during ListenableBuilder notifications, which could
     // invalidate inherited dependencies while Flutter was rebuilding.
     builder: (context, _) => MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'VetDosis Pro',
       locale: const Locale('es', 'MX'),
       supportedLocales: const [Locale('es', 'MX')],
@@ -392,6 +471,7 @@ class VetDosisApp extends StatelessWidget {
             )
           : shell(context),
     ),
+  ),
   );
 
   Widget shell(BuildContext context) =>

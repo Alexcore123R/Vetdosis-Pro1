@@ -347,6 +347,7 @@ class VetDosisApp extends StatelessWidget {
               forms: forms,
               identity: identity,
               clinical: clinical,
+              laboratory: laboratory,
               prescribing: prescribing,
               referenceLibrary: referenceLibrary,
               inventory: inventory,
@@ -381,6 +382,7 @@ class CoreShell extends StatelessWidget {
     this.forms,
     this.identity,
     this.clinical,
+    this.laboratory,
     this.prescribing,
     this.referenceLibrary,
     this.inventory,
@@ -409,6 +411,10 @@ class CoreShell extends StatelessWidget {
   final FormRepository? forms;
   final IdentityRepository? identity;
   final ClinicalRepository? clinical;
+
+  /// Nulo sin sesion de Supabase: entonces el expediente no ofrece
+  /// las analiticas, en vez de ofrecerlas y fallar al abrirlas.
+  final LabRepository? laboratory;
   final PrescribingRepository? prescribing;
   final ReferenceLibraryRepository? referenceLibrary;
   final InventoryRepository? inventory;

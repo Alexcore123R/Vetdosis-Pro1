@@ -248,7 +248,12 @@ void main() {
     await tester.tap(find.text('Guardar la toma'));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('punto decimal'), findsOneWidget);
+    // «punto decimal» tambien esta en el subtitulo de la hoja, asi que se
+    // busca el mensaje concreto, que nombra el analito que fallo.
+    expect(
+      find.textContaining('hematocrito: Valor: usa punto decimal'),
+      findsOneWidget,
+    );
     expect(repo.guardado, isNull, reason: 'no debe enviarse nada al servidor');
   });
 

@@ -1,0 +1,53 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../domain/lab_repository.dart';
+
+/// Llama a las funciones de 15M_lab_results.sql. Nada de acceso directo a
+/// tablas: esas estan en `private` y revocadas, justamente para que toda
+/// lectura y escritura pase por una funcion que comprueba permisos.
+class SupabaseLabRepository implements LabRepository {
+  SupabaseLabRepository(this.client);
+  final SupabaseClient client;
+
+  @override
+  Future<LabWorkspace> workspace(String clinicId, String patientId) async =>
+      LabWorkspace.read(
+        Map<String, dynamic>.from(
+          await client.rpc(
+                'lab_workspace',
+                params: {'p_clinic': clinicId, 'p_patient': patientId},
+              )
+              as Map,
+        ),
+      );
+
+  @override
+  Future<String> recordPanel(
+    String clinicId,
+    String patientId, {
+    required DateTime collectedAt,
+    required String origin,
+    required String labName,
+    required String notes,
+    required List<LabDraftResult> results,
+    required String operationId,
+  }) async =>
+      '${await client.rpc(
+        'lab_panel_record',
+        params: {
+          'p_clinic': clinicId,
+          'p_patient': patientId,
+          'p_data': {
+            // El servidor exige la confirmacion explicita: no guarda un
+            // expediente por un toque accidental.
+            'confirmed': true,
+            'collected_at': collectedAt.toUtc().toIso8601String(),
+            'origin': origin,
+            'lab_name': labName,
+            'notes': notes,
+            'results': [for (final r in results) r.toJson()],
+          },
+          'p_operation': operationId,
+        },
+      )}';
+}

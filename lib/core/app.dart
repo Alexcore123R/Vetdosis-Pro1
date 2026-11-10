@@ -93,6 +93,34 @@ import '../modules/auth/presentation/auth_screen.dart';
 // degradado de «Iniciar sesion»). Siguen siendo cinco: la semilla verde no se
 // borra, se sustituye por una de la gama propia de la app, asi que quien
 // tuviera elegido el tema 0 ve morado sin que se le mueva la seleccion.
+/// Linea de un control de seleccion en estilo neumorfico.
+///
+/// Solo hay linea cuando el control esta elegido —o mientras se pulsa o
+/// tiene el foco, que es cuando conviene senalarlo—, y es la del primario.
+/// En reposo no lleva ninguna: lo que lo separa del fondo es el relieve.
+BorderSide? Function(Set<WidgetState>) _neuSide(Color primary) =>
+    (states) =>
+        states.contains(WidgetState.disabled)
+        ? BorderSide.none
+        : states.contains(WidgetState.selected) ||
+              states.contains(WidgetState.pressed) ||
+              states.contains(WidgetState.focused)
+        ? BorderSide(color: primary, width: 1.5)
+        : BorderSide.none;
+
+/// Relieve del control: levantado en reposo, hundido al pulsar, plano si
+/// esta deshabilitado, que es como se comporta una tecla de verdad.
+double _neuElevation(Set<WidgetState> states) =>
+    states.contains(WidgetState.disabled)
+    ? 0
+    : states.contains(WidgetState.pressed)
+    ? 1
+    : 2;
+
+/// Sombra del relieve, en el mismo tono que usan las tarjetas.
+Color _neuShadow(bool dark) =>
+    dark ? const Color(0x59000000) : const Color(0x47B8BDCE);
+
 const paletteNames = ['Amatista', 'Océano', 'Índigo', 'Ámbar', 'Obsidiana'];
 const paletteColors = [
   VetColors.purple,
@@ -211,6 +239,12 @@ class VetDosisApp extends StatelessWidget {
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
+      // Hasta aqui el tema vivo no pasaba escala tipografica, asi que toda la
+      // app corria con la de Material 3, donde un titulo pesa lo mismo que su
+      // parrafo. Es la causa de que Caja y Formatos se lean como un muro de
+      // texto. La escala es la misma que usa VetTheme, en un solo sitio.
+      textTheme: VetTheme.textTheme(brightness, scheme),
+      fontFamily: VetTheme.fontFamily,
       scaffoldBackgroundColor: neumorphic ? background : null,
       appBarTheme: neumorphic
           ? AppBarTheme(
@@ -269,14 +303,48 @@ class VetDosisApp extends StatelessWidget {
               ),
             )
           : null,
+      // Los botones de linea y los chips llevaban un borde gris fijo que los
+      // dejaba planos y con el contorno mas oscuro que su propio contenido:
+      // la linea pesaba mas que la palabra. La regla pasa a ser la misma
+      // para los tres controles de seleccion —linea solo cuando esta
+      // elegido, y del primario— y en reposo se levantan en relieve en vez
+      // de dibujarse con borde.
+      //
+      // El relieve que se puede pedir desde ButtonStyle es la sombra de
+      // abajo, no el brillo de arriba: un neumorfismo a media voz. El
+      // completo necesita pintar las dos sombras, que es lo que hace
+      // NeuInputBorder en los campos y queda pendiente para estos.
+      outlinedButtonTheme: neumorphic
+          ? OutlinedButtonThemeData(
+              style: ButtonStyle(
+                side: WidgetStateProperty.resolveWith(_neuSide(primary)),
+                backgroundColor: WidgetStatePropertyAll(surface),
+                shadowColor: WidgetStatePropertyAll(_neuShadow(dark)),
+                elevation: WidgetStateProperty.resolveWith(_neuElevation),
+                shape: const WidgetStatePropertyAll(StadiumBorder()),
+              ),
+            )
+          : null,
+      segmentedButtonTheme: neumorphic
+          ? SegmentedButtonThemeData(
+              style: ButtonStyle(
+                side: WidgetStateProperty.resolveWith(_neuSide(primary)),
+                shadowColor: WidgetStatePropertyAll(_neuShadow(dark)),
+                elevation: WidgetStateProperty.resolveWith(_neuElevation),
+              ),
+            )
+          : null,
       chipTheme: neumorphic
           ? ChipThemeData(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
-              side: BorderSide(
-                color: dark ? VetColors.darkOutline : const Color(0xFFDDE7EF),
-              ),
+              side: WidgetStateBorderSide.resolveWith(_neuSide(primary)),
+              backgroundColor: surface,
+              selectedColor: primary.withValues(alpha: dark ? .22 : .15),
+              shadowColor: _neuShadow(dark),
+              elevation: 2,
+              pressElevation: 1,
             )
           : null,
       navigationBarTheme: neumorphic

@@ -50,4 +50,28 @@ class SupabaseLabRepository implements LabRepository {
           'p_operation': operationId,
         },
       )}';
+
+  @override
+  Future<String> correctResult(
+    String clinicId,
+    String resultId, {
+    required String value,
+    required String unit,
+    required String reason,
+    required String operationId,
+  }) async =>
+      '${await client.rpc(
+        'lab_result_correct',
+        params: {
+          'p_clinic': clinicId,
+          'p_result': resultId,
+          'p_data': {
+            'confirmed': true,
+            'value': value,
+            'unit': unit,
+            'correction_reason': reason,
+          },
+          'p_operation': operationId,
+        },
+      )}';
 }

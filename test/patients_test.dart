@@ -362,6 +362,48 @@ void main() {
     expect(find.textContaining('Sustancia ficticia'), findsNWidgets(2));
     expect(tester.takeException(), isNull);
   });
+  testWidgets('El expediente abre las analiticas y sin el modulo no', (
+    tester,
+  ) async {
+    phone(tester);
+    VetPatient? abierto;
+    Future<void> montar({required bool conLaboratorio}) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ListView(
+              children: [
+                PatientsScreen(
+                  repository: FakePatients(),
+                  member: membership(ClinicRole.mvz),
+                  onOpenLab: conLaboratorio
+                      ? (p) async => abierto = p
+                      : null,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Paciente ficticio'));
+      await tester.pumpAndSettle();
+    }
+
+    // Sin el modulo clinico el boton no se pinta, en vez de pintarse y
+    // fallar al abrirse.
+    await montar(conLaboratorio: false);
+    expect(find.text('Analíticas de laboratorio'), findsNothing);
+
+    await montar(conLaboratorio: true);
+    final boton = find.text('Analíticas de laboratorio');
+    expect(boton, findsOneWidget);
+    await tester.ensureVisible(boton);
+    await tester.tap(boton);
+    await tester.pumpAndSettle();
+    expect(abierto?.id, 'patient-a', reason: 'debe abrir ESTE paciente');
+    expect(tester.takeException(), isNull);
+  });
   testWidgets('Dictado crea borrador revisable y no guarda sin revisar', (
     tester,
   ) async {

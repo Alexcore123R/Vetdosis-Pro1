@@ -172,4 +172,16 @@ abstract interface class LabRepository {
     required List<LabDraftResult> results,
     required String operationId,
   });
+
+  /// Corrige un resultado. No lo edita ni lo borra: guarda una version nueva
+  /// que apunta a la anterior y exige decir por que. El servidor solo deja
+  /// corregir lo propio, y una sola vez por resultado.
+  Future<String> correctResult(
+    String clinicId,
+    String resultId, {
+    required String value,
+    required String unit,
+    required String reason,
+    required String operationId,
+  });
 }

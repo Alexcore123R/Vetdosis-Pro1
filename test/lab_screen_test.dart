@@ -31,6 +31,26 @@ class _FakeLab implements LabRepository {
     };
     return 'panel-1';
   }
+
+  Map<String, dynamic>? corregido;
+
+  @override
+  Future<String> correctResult(
+    String clinicId,
+    String resultId, {
+    required String value,
+    required String unit,
+    required String reason,
+    required String operationId,
+  }) async {
+    corregido = {
+      'result': resultId,
+      'value': value,
+      'unit': unit,
+      'reason': reason,
+    };
+    return 'nuevo-1';
+  }
 }
 
 Map<String, dynamic> _resultado(
@@ -161,6 +181,54 @@ void main() {
     await _montar(tester, repo);
     expect(find.text('Registrar una toma'), findsNothing);
     expect(find.textContaining('no registrarlas'), findsOneWidget);
+  });
+
+  testWidgets('La correccion exige motivo y conserva el original', (
+    tester,
+  ) async {
+    final repo = _FakeLab(
+      _ws([
+        _resultado('hematocrito', '36', '%', [_rango('37', '55', '%', 'NRC')]),
+      ]),
+    );
+    await _montar(tester, repo);
+
+    await tester.tap(find.byTooltip('Corregir este resultado'));
+    await tester.pumpAndSettle();
+    // Sin motivo no se envia nada.
+    await tester.tap(find.text('Guardar la corrección'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('por qué se corrige'), findsOneWidget);
+    expect(repo.corregido, isNull);
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Motivo de la corrección'),
+      'Captura equivocada',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Valor corregido'),
+      '41',
+    );
+    await tester.tap(find.text('Guardar la corrección'));
+    await tester.pumpAndSettle();
+    expect(repo.corregido, {
+      'result': 'r-hematocrito',
+      'value': '41',
+      'unit': '%',
+      'reason': 'Captura equivocada',
+    });
+  });
+
+  testWidgets('Sin permiso de escritura no se ofrece corregir', (
+    tester,
+  ) async {
+    final repo = _FakeLab(
+      _ws([
+        _resultado('hematocrito', '36', '%', [_rango('37', '55', '%', 'NRC')]),
+      ], canRecord: false),
+    );
+    await _montar(tester, repo);
+    expect(find.byTooltip('Corregir este resultado'), findsNothing);
   });
 
   testWidgets('La captura rechaza la coma decimal antes de enviar', (

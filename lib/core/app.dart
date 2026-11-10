@@ -38,6 +38,8 @@ import '../modules/inventory/presentation/quick_scan_screen.dart';
 import '../modules/support/domain/support_repository.dart';
 import '../modules/support/presentation/support_screen.dart';
 import '../modules/welcome/presentation/product_screen.dart';
+import '../modules/laboratory/domain/lab_repository.dart';
+import '../modules/laboratory/presentation/lab_screen.dart';
 import '../modules/welcome/presentation/public_welcome_screen.dart';
 import '../modules/welcome/presentation/guided_start_screen.dart';
 import '../modules/ai/domain/ai_repository.dart';
@@ -127,6 +129,7 @@ class VetDosisApp extends StatelessWidget {
     this.moduleAccess,
     this.experienceRepository,
     this.reviewCatalog,
+    this.laboratory,
   });
   final CoreViewModel model;
   final AuthViewModel? auth;
@@ -153,6 +156,10 @@ class VetDosisApp extends StatelessWidget {
   final ModuleAccessRepository? moduleAccess;
   final ClinicExperienceRepository? experienceRepository;
   final ReviewCatalogRepository? reviewCatalog;
+
+  /// Nulo cuando no hay sesion de Supabase: sin el, el expediente no
+  /// ofrece las analiticas en vez de ofrecerlas y fallar al abrirlas.
+  final LabRepository? laboratory;
   ThemeData theme(Brightness brightness) {
     final dark = brightness == Brightness.dark;
     final neumorphic = model.settings.visualStyle == 'neu';
@@ -1058,6 +1065,24 @@ class CoreShell extends StatelessWidget {
                                     );
                                   }
                                 },
+                                onOpenLab:
+                                    laboratory != null &&
+                                        allowed('Analíticas')
+                                    ? (patient) async {
+                                        await Navigator.push(
+                                          context,
+                                          MaterialPageRoute<void>(
+                                            builder: (_) => LabScreen(
+                                              repository: laboratory!,
+                                              clinicId:
+                                                  auth!.active!.clinicId,
+                                              patientId: patient.id,
+                                              patientName: patient.name,
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    : null,
                                 onOpenClinical:
                                     clinical != null && forms != null
                                     ? (patient) async {

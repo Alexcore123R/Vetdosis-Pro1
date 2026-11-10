@@ -144,4 +144,41 @@ class LabViewModel extends ChangeNotifier {
     await load();
     return null;
   }
+
+  /// Corrige un resultado. Devuelve el mensaje de error, o nulo si se
+  /// guardo. No edita nada: el original se conserva y la version nueva lo
+  /// apunta, con su motivo.
+  Future<String?> correct(
+    String resultId, {
+    required String value,
+    required String unit,
+    required String reason,
+  }) async {
+    if (reason.trim().isEmpty) return 'Di por qué se corrige.';
+    if (unit.trim().isEmpty) return 'Falta la unidad.';
+    try {
+      // La misma regla que el servidor y que la captura.
+      LabResult.parseValue(value);
+    } on FormatException catch (e) {
+      return e.message;
+    }
+    busy = true;
+    notifyListeners();
+    try {
+      await repository.correctResult(
+        clinicId,
+        resultId,
+        value: value.trim(),
+        unit: unit.trim(),
+        reason: reason.trim(),
+        operationId: newLabOperationId(),
+      );
+    } catch (e) {
+      busy = false;
+      notifyListeners();
+      return '$e';
+    }
+    await load();
+    return null;
+  }
 }

@@ -105,7 +105,11 @@ class _LabScreenState extends State<LabScreen> {
                 icon: Icons.inbox_outlined,
               ),
             for (final panel in ws?.panels ?? const <LabStoredPanel>[])
-              _PanelCard(panel: panel, model: model),
+              _PanelCard(
+                panel: panel,
+                model: model,
+                canRecord: ws?.canRecord ?? false,
+              ),
           ],
         );
       },
@@ -114,9 +118,14 @@ class _LabScreenState extends State<LabScreen> {
 }
 
 class _PanelCard extends StatelessWidget {
-  const _PanelCard({required this.panel, required this.model});
+  const _PanelCard({
+    required this.panel,
+    required this.model,
+    required this.canRecord,
+  });
   final LabStoredPanel panel;
   final LabViewModel model;
+  final bool canRecord;
 
   String get _fecha {
     final d = panel.collectedAt;
@@ -147,7 +156,10 @@ class _PanelCard extends StatelessWidget {
               ),
             const Divider(height: 20),
             for (final stored in panel.current)
-              _ResultTile(view: model.view(panel, stored)),
+              _ResultTile(
+                view: model.view(panel, stored),
+                model: canRecord ? model : null,
+              ),
           ],
         ),
       ),
@@ -156,8 +168,11 @@ class _PanelCard extends StatelessWidget {
 }
 
 class _ResultTile extends StatelessWidget {
-  const _ResultTile({required this.view});
+  const _ResultTile({required this.view, this.model});
   final LabResultView view;
+
+  /// Nulo cuando la cuenta no puede escribir: entonces no se ofrece corregir.
+  final LabViewModel? model;
 
   /// 37.0 se lee peor que 37, y 4.50 peor que 4.5.
   static String cifra(double v) {
@@ -194,6 +209,12 @@ class _ResultTile extends StatelessWidget {
                 child: Text(r.analyteKey, style: textTheme.titleSmall),
               ),
               Text('${r.value} ${r.unit}', style: textTheme.titleMedium),
+              if (model != null)
+                IconButton(
+                  icon: const Icon(Icons.edit_note, size: 20),
+                  tooltip: 'Corregir este resultado',
+                  onPressed: () => _corregir(context, model!, r),
+                ),
             ],
           ),
           if (r.isCorrection && r.correctionReason != null)
@@ -255,6 +276,87 @@ class _ResultTile extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Pide el valor nuevo y el motivo. El motivo es obligatorio: una
+/// correccion sin razon escrita no se distingue de un error.
+Future<void> _corregir(
+  BuildContext context,
+  LabViewModel model,
+  LabStoredResult r,
+) async {
+  final valor = TextEditingController(text: r.value);
+  final unidad = TextEditingController(text: r.unit);
+  final motivo = TextEditingController();
+  String? error;
+  await showDialog<void>(
+    context: context,
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (dialogContext, setLocal) => AlertDialog(
+        title: Text('Corregir ${r.analyteKey}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'El valor original no se borra: queda guardado y esta '
+              'correccion apunta a el.',
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: valor,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(labelText: 'Valor corregido'),
+            ),
+            TextField(
+              controller: unidad,
+              decoration: const InputDecoration(labelText: 'Unidad'),
+            ),
+            TextField(
+              controller: motivo,
+              decoration: const InputDecoration(
+                labelText: 'Motivo de la corrección',
+              ),
+            ),
+            if (error != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final fallo = await model.correct(
+                r.id,
+                value: valor.text,
+                unit: unidad.text,
+                reason: motivo.text,
+              );
+              if (fallo != null) {
+                setLocal(() => error = fallo);
+                return;
+              }
+              if (dialogContext.mounted) Navigator.of(dialogContext).pop();
+            },
+            child: const Text('Guardar la corrección'),
+          ),
+        ],
+      ),
+    ),
+  );
+  valor.dispose();
+  unidad.dispose();
+  motivo.dispose();
 }
 
 class _CaptureSheet extends StatefulWidget {

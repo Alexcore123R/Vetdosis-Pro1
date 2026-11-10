@@ -3,65 +3,16 @@ import 'package:flutter/material.dart';
 import '../../../vet_ui/vet_components.dart';
 import '../../../vet_ui/vet_theme.dart';
 import 'porcino_panels.dart';
+import '../domain/production_catalog.dart';
+import '../domain/production_unit_repository.dart';
+import 'production_units_screen.dart';
+export '../domain/production_catalog.dart';
 import 'feeding_panel.dart';
 import '../../aviculture/presentation/aviculture_screen.dart';
 import '../../incubation/presentation/incubation_screen.dart';
 import '../../auth/domain/clinic_membership.dart';
 import '../../core/domain/module_access.dart';
 import '../../core/domain/navigation_access.dart';
-
-const productionSpecies = <String, List<String>>{
-  'Bovinos': [
-    'Leche',
-    'Carne y engorda',
-    'Doble propósito',
-    'Atención individual',
-  ],
-  'Ovinos / caprinos': ['Ovinos', 'Caprinos'],
-  'Aves': ['Postura', 'Engorda', 'Reproducción e incubación'],
-  'Peces': ['Tilapia'],
-  'Abejas': ['Apiarios y colmenas'],
-  'Porcinos': [
-    'Reproducción y gestación',
-    'Maternidad y destete',
-    'Crecimiento y engorda',
-  ],
-  'Equinos': ['Atención individual', 'Reproducción y crianza'],
-};
-
-const plannedProductionAreas = <String, List<String>>{
-  'Bovinos': [
-    'Animales y hatos/lotes',
-    'Reproducción y alimentación',
-    'Indicadores por unidad',
-  ],
-  'Ovinos / caprinos': [
-    'Animales y rebaños',
-    'Carne, leche y fibra según actividad',
-    'Reproducción y alimentación',
-  ],
-  'Aves': [
-    'Parvadas, casetas y ciclos',
-    'Registros productivos',
-    'Alimentación y seguimiento',
-  ],
-  'Peces': [
-    'Lotes y unidades de cultivo',
-    'Calidad del agua y alimentación',
-    'Biomasa y ciclos',
-  ],
-  'Abejas': [
-    'Apiarios y colmenas',
-    'Revisiones y sanidad',
-    'Cosechas y seguimiento',
-  ],
-  'Porcinos': [
-    'Reproductores y servicios',
-    'Camadas y alimentación',
-    'Engorda e indicadores',
-  ],
-  'Equinos': ['Atención y seguimiento individual', 'Reproducción y crianza'],
-};
 
 /// Catalog and existing local tools only. No farm records or operating limits
 /// are created by selecting a species/activity.
@@ -71,10 +22,17 @@ class ProductionMenu extends StatefulWidget {
     required this.onNavigate,
     this.member,
     this.access,
+    this.units,
   });
   final ValueChanged<String> onNavigate;
   final ClinicMembership? member;
   final ModuleAccess? access;
+
+  /// Donde se guardan las unidades de produccion.
+  ///
+  /// Opcional: sin almacen la seccion de unidades no aparece, igual que el
+  /// resto de la pantalla sigue funcionando sin sesion.
+  final ProductionUnitRepository? units;
   @override
   State<ProductionMenu> createState() => _ProductionMenuState();
 }
@@ -282,10 +240,36 @@ class _ProductionMenuState extends State<ProductionMenu> {
           denied,
       ],
       const SizedBox(height: 24),
-      const VetSectionHeader(
+      if (widget.units case final ProductionUnitRepository almacen)
+        if (widget.member case final ClinicMembership miembro)
+          if (activity case final String elegida)
+            if (productionActivityHasUnits(elegida)) ...[
+              VetSectionHeader(
+                title: 'Unidades de $elegida',
+                subtitle:
+                    'El hato, lote, parvada o apiario del que cuelgan los demás '
+                    'registros. Se guarda en este dispositivo.',
+              ),
+              VetActionButton(
+                icon: Icons.inventory_2_outlined,
+                label: 'Abrir unidades',
+                onPressed: () => open(
+                  ProductionUnitsScreen(
+                    repository: almacen,
+                    userId: miembro.userId,
+                    clinicId: miembro.clinicId,
+                    species: species!,
+                    activity: elegida,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+      VetSectionHeader(
         title: 'Apartados previstos',
-        subtitle:
-            'Estos registros específicos están en preparación; aún no permiten guardar datos de unidades o lotes.',
+        subtitle: widget.units == null
+            ? 'Estos registros específicos están en preparación; aún no permiten guardar datos de unidades o lotes.'
+            : 'Estos registros específicos están en preparación. Las unidades sí se guardan, arriba.',
       ),
       for (final name in plannedProductionAreas[species]!)
         Padding(

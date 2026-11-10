@@ -365,7 +365,12 @@ void main() {
   testWidgets('El expediente abre las analiticas y sin el modulo no', (
     tester,
   ) async {
-    phone(tester);
+    // Pantalla alta a proposito: el boton vive al final del expediente y en
+    // 844 px de alto queda a 1594, fuera de cualquier toque.
+    tester.view.physicalSize = const Size(390, 2600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     VetPatient? abierto;
     Future<void> montar({required bool conLaboratorio}) async {
       await tester.pumpWidget(
@@ -399,6 +404,9 @@ void main() {
     final boton = find.text('Analíticas de laboratorio');
     expect(boton, findsOneWidget);
     await tester.ensureVisible(boton);
+    // Sin esto el desplazamiento no se ha aplicado cuando tap calcula donde
+    // tocar, y el toque cae fuera del boton.
+    await tester.pumpAndSettle();
     await tester.tap(boton);
     await tester.pumpAndSettle();
     expect(abierto?.id, 'patient-a', reason: 'debe abrir ESTE paciente');

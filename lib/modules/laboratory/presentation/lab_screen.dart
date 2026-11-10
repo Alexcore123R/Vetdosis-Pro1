@@ -213,7 +213,11 @@ class _ResultTile extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.edit_note, size: 20),
                   tooltip: 'Corregir este resultado',
-                  onPressed: () => _corregir(context, model!, r),
+                  onPressed: () => showDialog<void>(
+                    context: context,
+                    builder: (_) =>
+                        _CorrectionDialog(model: model!, result: r),
+                  ),
                 ),
             ],
           ),
@@ -278,85 +282,99 @@ class _ResultTile extends StatelessWidget {
   }
 }
 
-/// Pide el valor nuevo y el motivo. El motivo es obligatorio: una
-/// correccion sin razon escrita no se distingue de un error.
-Future<void> _corregir(
-  BuildContext context,
-  LabViewModel model,
-  LabStoredResult r,
-) async {
-  final valor = TextEditingController(text: r.value);
-  final unidad = TextEditingController(text: r.unit);
+/// Pide el valor nuevo y el motivo.
+///
+/// Es un widget con estado y no una funcion con controladores locales
+/// porque los controladores tienen que vivir y morir con el dialogo. Al
+/// cerrarlo, la ruta sigue animandose y vuelve a construir los campos: si
+/// los controladores ya se liberaron, revienta con «A TextEditingController
+/// was used after being disposed», y la excepcion se arrastra a lo que
+/// venga despues.
+class _CorrectionDialog extends StatefulWidget {
+  const _CorrectionDialog({required this.model, required this.result});
+  final LabViewModel model;
+  final LabStoredResult result;
+
+  @override
+  State<_CorrectionDialog> createState() => _CorrectionDialogState();
+}
+
+class _CorrectionDialogState extends State<_CorrectionDialog> {
+  late final valor = TextEditingController(text: widget.result.value);
+  late final unidad = TextEditingController(text: widget.result.unit);
   final motivo = TextEditingController();
   String? error;
-  await showDialog<void>(
-    context: context,
-    builder: (dialogContext) => StatefulBuilder(
-      builder: (dialogContext, setLocal) => AlertDialog(
-        title: Text('Corregir ${r.analyteKey}'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'El valor original no se borra: queda guardado y esta '
-              'correccion apunta a el.',
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: valor,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: const InputDecoration(labelText: 'Valor corregido'),
-            ),
-            TextField(
-              controller: unidad,
-              decoration: const InputDecoration(labelText: 'Unidad'),
-            ),
-            TextField(
-              controller: motivo,
-              decoration: const InputDecoration(
-                labelText: 'Motivo de la corrección',
-              ),
-            ),
-            if (error != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  error!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              ),
-          ],
+
+  @override
+  void dispose() {
+    valor.dispose();
+    unidad.dispose();
+    motivo.dispose();
+    super.dispose();
+  }
+
+  Future<void> guardar() async {
+    final fallo = await widget.model.correct(
+      widget.result.id,
+      value: valor.text,
+      unit: unidad.text,
+      reason: motivo.text,
+    );
+    if (!mounted) return;
+    if (fallo != null) {
+      setState(() => error = fallo);
+      return;
+    }
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: Text('Corregir ${widget.result.analyteKey}'),
+    content: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text(
+          'El valor original no se borra: queda guardado y esta corrección '
+          'apunta a él.',
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancelar'),
+        const SizedBox(height: 12),
+        TextField(
+          controller: valor,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(labelText: 'Valor corregido'),
+        ),
+        TextField(
+          controller: unidad,
+          decoration: const InputDecoration(labelText: 'Unidad'),
+        ),
+        TextField(
+          controller: motivo,
+          decoration: const InputDecoration(
+            labelText: 'Motivo de la corrección',
           ),
-          FilledButton(
-            onPressed: () async {
-              final fallo = await model.correct(
-                r.id,
-                value: valor.text,
-                unit: unidad.text,
-                reason: motivo.text,
-              );
-              if (fallo != null) {
-                setLocal(() => error = fallo);
-                return;
-              }
-              if (dialogContext.mounted) Navigator.of(dialogContext).pop();
-            },
-            child: const Text('Guardar la corrección'),
+        ),
+        if (error != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              error!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
           ),
-        ],
-      ),
+      ],
     ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.of(context).pop(),
+        child: const Text('Cancelar'),
+      ),
+      FilledButton(
+        onPressed: guardar,
+        child: const Text('Guardar la corrección'),
+      ),
+    ],
   );
-  valor.dispose();
-  unidad.dispose();
-  motivo.dispose();
 }
 
 class _CaptureSheet extends StatefulWidget {

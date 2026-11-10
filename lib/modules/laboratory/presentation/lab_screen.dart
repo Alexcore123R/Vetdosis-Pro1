@@ -70,7 +70,6 @@ class _LabScreenState extends State<LabScreen> {
           padding: const EdgeInsets.all(16),
           children: [
             VetSectionHeader(
-              icon: Icons.science_outlined,
               large: true,
               title: widget.patientName,
               subtitle:
@@ -364,7 +363,6 @@ class _CaptureSheetState extends State<_CaptureSheet> {
           mainAxisSize: MainAxisSize.min,
           children: [
             const VetSectionHeader(
-              icon: Icons.add_chart,
               title: 'Registrar una toma',
               subtitle:
                   'Captura los valores tal como vienen del reporte. Usa punto '

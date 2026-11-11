@@ -46,6 +46,11 @@ class LabViewModel extends ChangeNotifier {
   bool busy = false;
   String? error;
 
+  /// Los analitos que la biblioteca conoce para la especie del paciente.
+  /// Vacio no es un fallo: significa que para esa especie no hay referencias
+  /// importadas, y la captura sigue aceptando el nombre a mano.
+  List<LabAnalyte> catalog = const [];
+
   Future<void> load() async {
     busy = true;
     error = null;
@@ -54,6 +59,13 @@ class LabViewModel extends ChangeNotifier {
       workspace = await repository.workspace(clinicId, patientId);
     } catch (e) {
       error = '$e';
+    }
+    // El catalogo es una ayuda de captura: si falla, no se cae la pantalla
+    // ni se pierde el expediente que ya se leyo.
+    try {
+      catalog = await repository.analyteCatalog(clinicId, patientId);
+    } catch (_) {
+      catalog = const [];
     }
     busy = false;
     notifyListeners();

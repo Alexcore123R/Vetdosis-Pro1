@@ -156,8 +156,42 @@ class LabDraftResult {
   };
 }
 
+/// Un analito que la biblioteca de referencias conoce para la especie del
+/// paciente, con la unidad en que publica el rango.
+///
+/// Existe para que la captura ofrezca EL NOMBRE que va a resolver un rango.
+/// Teclear el analito libre funciona, pero una letra de mas deja el
+/// resultado sin referencia y eso no se ve al guardar.
+class LabAnalyte {
+  const LabAnalyte({
+    required this.analyteKey,
+    required this.unit,
+    required this.sources,
+  });
+
+  factory LabAnalyte.read(Map<String, dynamic> row) => LabAnalyte(
+    analyteKey: '${row['analyte_key']}',
+    unit: '${row['unit']}',
+    sources: (row['sources'] as num?)?.toInt() ?? 0,
+  );
+
+  final String analyteKey, unit;
+
+  /// Cuantas fuentes publican un rango para este analito y unidad. Dos o mas
+  /// es el caso en que las fuentes pueden no coincidir.
+  final int sources;
+
+  String get label => sources > 1
+      ? '$analyteKey · $unit · $sources fuentes'
+      : '$analyteKey · $unit';
+}
+
 abstract interface class LabRepository {
   Future<LabWorkspace> workspace(String clinicId, String patientId);
+
+  /// Los analitos que la biblioteca conoce para la especie de ESTE paciente.
+  /// La especie la lee el servidor del expediente, no la manda el cliente.
+  Future<List<LabAnalyte>> analyteCatalog(String clinicId, String patientId);
 
   /// Devuelve el id de la toma. Es idempotente por [operationId]: repetir la
   /// llamada con el mismo contenido devuelve la misma toma en vez de crear

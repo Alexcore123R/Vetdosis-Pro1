@@ -6,13 +6,20 @@ import 'package:vetdosis_pro/modules/laboratory/presentation/lab_screen.dart';
 /// Repositorio de mentira: devuelve lo que el servidor devolveria, en la
 /// misma forma, sin tocar la red.
 class _FakeLab implements LabRepository {
-  _FakeLab(this.data);
+  _FakeLab(this.data, {this.catalogo = const []});
   final Map<String, dynamic> data;
+  final List<Map<String, dynamic>> catalogo;
   Map<String, dynamic>? guardado;
 
   @override
   Future<LabWorkspace> workspace(String clinicId, String patientId) async =>
       LabWorkspace.read(data);
+
+  @override
+  Future<List<LabAnalyte>> analyteCatalog(
+    String clinicId,
+    String patientId,
+  ) async => [for (final r in catalogo) LabAnalyte.read(r)];
 
   @override
   Future<String> recordPanel(
@@ -281,5 +288,61 @@ void main() {
       RegExp(r'^[0-9a-f]{48}$').hasMatch('${repo.guardado!['operation']}'),
       isTrue,
     );
+  });
+
+  testWidgets('El catalogo ofrece el analito y llena su unidad', (
+    tester,
+  ) async {
+    final repo = _FakeLab(
+      _ws(const []),
+      catalogo: const [
+        {'analyte_key': 'Hematocrito', 'unit': '%', 'sources': 2},
+        {'analyte_key': 'Glucosa', 'unit': 'mg/dL', 'sources': 1},
+      ],
+    );
+    await _montar(tester, repo);
+    await tester.tap(find.text('Registrar una toma'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Analito 1'),
+      'hemat',
+    );
+    await tester.pumpAndSettle();
+    // La opcion dice cuantas fuentes hay: dos es el caso en que pueden no
+    // coincidir.
+    expect(find.text('Hematocrito · % · 2 fuentes'), findsOneWidget);
+    await tester.tap(find.text('Hematocrito · % · 2 fuentes'));
+    await tester.pumpAndSettle();
+
+    // Al elegir, el nombre queda exacto y la unidad se llena sola: las dos
+    // mitades de que el rango aparezca.
+    await tester.enterText(find.widgetWithText(TextField, 'Valor'), '45');
+    await tester.tap(find.text('Guardar la toma'));
+    await tester.pumpAndSettle();
+    expect(repo.guardado!['results'], [
+      {'analyte_key': 'Hematocrito', 'value': '45', 'unit': '%'},
+    ]);
+  });
+
+  testWidgets('Sin catalogo la captura sigue aceptando el nombre a mano', (
+    tester,
+  ) async {
+    final repo = _FakeLab(_ws(const []));
+    await _montar(tester, repo);
+    await tester.tap(find.text('Registrar una toma'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Analito 1'),
+      'analito raro',
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.widgetWithText(TextField, 'Valor'), '1.5');
+    await tester.enterText(find.widgetWithText(TextField, 'Unidad'), 'mg/dL');
+    await tester.tap(find.text('Guardar la toma'));
+    await tester.pumpAndSettle();
+    expect(repo.guardado!['results'], [
+      {'analyte_key': 'analito raro', 'value': '1.5', 'unit': 'mg/dL'},
+    ]);
   });
 }

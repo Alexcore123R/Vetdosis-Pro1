@@ -22,6 +22,24 @@ class SupabaseLabRepository implements LabRepository {
       );
 
   @override
+  Future<List<LabAnalyte>> analyteCatalog(
+    String clinicId,
+    String patientId,
+  ) async {
+    final data = Map<String, dynamic>.from(
+      await client.rpc(
+            'lab_analyte_catalog',
+            params: {'p_clinic': clinicId, 'p_patient': patientId},
+          )
+          as Map,
+    );
+    return [
+      for (final r in (data['items'] as List? ?? const []))
+        LabAnalyte.read(Map<String, dynamic>.from(r as Map)),
+    ];
+  }
+
+  @override
   Future<String> recordPanel(
     String clinicId,
     String patientId, {

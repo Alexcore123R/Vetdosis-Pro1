@@ -392,6 +392,7 @@ class _CaptureSheetState extends State<_CaptureSheet> {
     TextEditingController analyte,
     TextEditingController value,
     TextEditingController unit,
+    FocusNode focus,
   })>[];
   DateTime collectedAt = DateTime.now();
   String origin = 'laboratorio_externo';
@@ -408,6 +409,7 @@ class _CaptureSheetState extends State<_CaptureSheet> {
       analyte: TextEditingController(),
       value: TextEditingController(),
       unit: TextEditingController(),
+      focus: FocusNode(),
     )),
   );
 
@@ -419,6 +421,7 @@ class _CaptureSheetState extends State<_CaptureSheet> {
       f.analyte.dispose();
       f.value.dispose();
       f.unit.dispose();
+      f.focus.dispose();
     }
     super.dispose();
   }
@@ -482,11 +485,15 @@ class _CaptureSheetState extends State<_CaptureSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const VetSectionHeader(
+            VetSectionHeader(
               title: 'Registrar una toma',
               subtitle:
                   'Captura los valores tal como vienen del reporte. Usa punto '
-                  'decimal: la coma es separador de miles.',
+                  'decimal: la coma es separador de miles.'
+                  '${widget.model.catalog.isEmpty ? '' : ' La biblioteca '
+                      'conoce ${widget.model.catalog.length} analitos de esta '
+                      'especie: escribe y elige uno para que la referencia '
+                      'aparezca.'}',
             ),
             Wrap(
               spacing: 8,
@@ -529,11 +536,66 @@ class _CaptureSheetState extends State<_CaptureSheet> {
                   children: [
                     Expanded(
                       flex: 3,
-                      child: TextField(
-                        controller: f.analyte,
-                        decoration: InputDecoration(
-                          labelText: 'Analito ${i + 1}',
-                        ),
+                      // El nombre se puede teclear libre, pero si la
+                      // biblioteca conoce la especie del paciente se
+                      // ofrecen SUS nombres: son los que resuelven un
+                      // rango. Al elegir uno se llena tambien la unidad en
+                      // que la fuente publica el intervalo, que es la otra
+                      // mitad de que la referencia aparezca.
+                      child: RawAutocomplete<LabAnalyte>(
+                        textEditingController: f.analyte,
+                        focusNode: f.focus,
+                        displayStringForOption: (o) => o.analyteKey,
+                        optionsBuilder: (valor) {
+                          final q = valor.text.trim().toLowerCase();
+                          final todos = widget.model.catalog;
+                          if (q.isEmpty) return todos.take(12);
+                          return todos
+                              .where(
+                                (o) =>
+                                    o.analyteKey.toLowerCase().contains(q),
+                              )
+                              .take(12);
+                        },
+                        onSelected: (o) => setState(() {
+                          f.analyte.text = o.analyteKey;
+                          f.unit.text = o.unit;
+                        }),
+                        fieldViewBuilder:
+                            (context, controller, focus, onSubmit) =>
+                                TextField(
+                                  controller: controller,
+                                  focusNode: focus,
+                                  onSubmitted: (_) => onSubmit(),
+                                  decoration: InputDecoration(
+                                    labelText: 'Analito ${i + 1}',
+                                  ),
+                                ),
+                        optionsViewBuilder: (context, onSelected, opciones) =>
+                            Align(
+                              alignment: Alignment.topLeft,
+                              child: Material(
+                                elevation: 4,
+                                child: ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                    maxHeight: 240,
+                                    maxWidth: 360,
+                                  ),
+                                  child: ListView(
+                                    padding: EdgeInsets.zero,
+                                    shrinkWrap: true,
+                                    children: [
+                                      for (final o in opciones)
+                                        ListTile(
+                                          dense: true,
+                                          title: Text(o.label),
+                                          onTap: () => onSelected(o),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
                       ),
                     ),
                     const SizedBox(width: 8),

@@ -1,4 +1,6 @@
 import '../core/widgets/accent_glow.dart';
+import '../core/widgets/neu_identity.dart';
+import '../core/widgets/workspace_panel.dart';
 import 'package:flutter/material.dart';
 
 import 'vet_theme.dart';
@@ -33,16 +35,33 @@ class VetCard extends StatelessWidget {
     // de las curvas. El recorte sigue existiendo para que las ondas del
     // InkWell no se salgan, que es para lo que estaba.
     final forma = BorderRadius.circular(radius);
+    // VetCard no era neu, y es la tarjeta que mas se usa (16 sitios: las
+    // tarjetas de Secciones, Produccion, Porcinos, Agenda y Operaciones).
+    // Llevaba UNA sombra abajo a la derecha, que es la elevacion de Material,
+    // y encima un borde visible. Resultado: se dibujaba con un trazo y una
+    // sombra plana en medio de una pantalla que se levanta con relieve, y por
+    // eso se veia como de otro sistema.
+    //
+    // En neu pasa al par de sombras del sistema y pierde el trazo. El borde no
+    // se quita, se vuelve transparente: ocupa 1 px y de el salia el padding
+    // efectivo de 17 en vez de 16, asi que borrarlo moveria el contenido de
+    // las 16 tarjetas y las pruebas de ancho que ya existen.
+    //
+    // El clasico se queda exactamente como estaba: es otro estilo, no una
+    // version a medias de este.
+    final neu = theme.extension<WorkspaceStyle>()?.neumorphic == true;
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: forma,
-        boxShadow: [
-          BoxShadow(
-            color: dark ? Colors.black26 : VetColors.softShadow,
-            offset: const Offset(3, 4),
-            blurRadius: 10,
-          ),
-        ],
+        boxShadow: neu
+            ? neuShadows(dark)
+            : [
+                BoxShadow(
+                  color: dark ? Colors.black26 : VetColors.softShadow,
+                  offset: const Offset(3, 4),
+                  blurRadius: 10,
+                ),
+              ],
       ),
       // La superficie va en el propio Material, no en un Container de dentro.
       // ListTile pinta su fondo y sus ondas sobre el Material mas cercano, asi
@@ -58,7 +77,9 @@ class VetCard extends StatelessWidget {
           padding: padding,
           decoration: BoxDecoration(
             borderRadius: forma,
-            border: Border.all(color: theme.colorScheme.outlineVariant),
+            border: Border.all(
+              color: neu ? Colors.transparent : theme.colorScheme.outlineVariant,
+            ),
           ),
           child: child,
         ),

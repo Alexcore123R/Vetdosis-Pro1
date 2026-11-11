@@ -1,6 +1,5 @@
 import '../../../core/widgets/accent_glow.dart';
 import 'ai_labels.dart';
-import 'starter_help_panel.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
@@ -471,22 +470,10 @@ class _AiScreenState extends State<AiScreen> {
         const Text(
           'Apoyo con IA · respuestas sin verificar. Dosis, normativa y cálculos requieren fuentes verificadas y el motor clínico; este chat no emite recetas ni registra actos.',
         ),
-        if (widget.repository is StarterAiRepository)
-          StarterHelpPanel(
-            repository: widget.repository as StarterAiRepository,
-            clinic: widget.member.clinicId,
-            onCompleted: (id) async {
-              if (!mounted) return;
-              setState(() {
-                composer.clear();
-                consent = false;
-                personal = false;
-                team = false;
-                operation = newOperationId();
-              });
-              await vm.load(chat: id);
-            },
-          ),
+        // La ayuda de uso de la app ya no vive aqui: se fue a «Ayuda y
+        // soporte». Estaban apiladas en esta misma pantalla y se leian como
+        // una sola cosa. Esta pantalla es el chat; aquella responde dudas de
+        // uso a partir de la guia publica.
         if (vm.busy || working) const LinearProgressIndicator(),
         if (vm.error != null) Text(vm.error!),
         Text(

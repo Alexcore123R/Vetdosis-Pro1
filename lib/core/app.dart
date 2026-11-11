@@ -87,19 +87,33 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import '../modules/core/presentation/core_view_model.dart';
 import '../modules/auth/presentation/auth_view_model.dart';
 import '../modules/auth/presentation/auth_screen.dart';
+import '../modules/ai/presentation/starter_help_panel.dart';
 
-// El tema por omision deja de ser el verde esmeralda y pasa a ser el morado
-// brillante de la marca (VetColors.purple, el mismo del logotipo y del
-// degradado de «Iniciar sesion»). Siguen siendo cinco: la semilla verde no se
-// borra, se sustituye por una de la gama propia de la app, asi que quien
-// tuviera elegido el tema 0 ve morado sin que se le mueva la seleccion.
-const paletteNames = ['Amatista', 'Océano', 'Índigo', 'Ámbar', 'Obsidiana'];
+/// Los cinco temas del selector de Ajustes, con nombre y semilla.
+///
+/// El indice 0 es el verdeazulado, que es el tema por omision: Ale lo pidio
+/// asi el 11 de noviembre, viendo el morado ya aplicado.
+///
+/// Conviene saber que esto revierte lo VISIBLE de 54bddae, que habia pasado
+/// el primario de verde a morado y esta fusionado en main. No se revierte el
+/// commit: el morado no se pierde, baja a ser el segundo tono y se puede
+/// elegir en Ajustes. Lo que cambia es cual sale sin tocar nada.
+///
+/// Los otros cuatro eran colores de catalogo (oceano, indigo, ambar,
+/// obsidiana) ajenos a la familia, asi que al elegir uno la app dejaba de
+/// parecerse a si misma; pasan a [VetColors].
+///
+/// Son SEMILLAS, no colores finales. Material 3 deriva de cada una un
+/// `primary` y un `onPrimary` que contrastan entre si, que es lo que exige
+/// `platform_review_test` a las cinco paletas en los dos brillos. Por eso ya
+/// no hace falta elegir a mano un morado claro para oscuro y otro para claro.
+const paletteNames = ['Turquesa', 'Amatista', 'Cielo', 'Lila', 'Menta'];
 const paletteColors = [
+  Color(0xFF087F83),
   VetColors.purple,
-  Color(0xFF126AAB),
-  Color(0xFF6254AE),
-  Color(0xFF946000),
-  Color(0xFF52606D),
+  VetColors.brandSky,
+  VetColors.brandLilac,
+  VetColors.mint,
 ];
 
 /// Raiz de la aplicacion: arma el tema, decide si hay que autenticar y
@@ -172,41 +186,38 @@ class VetDosisApp extends StatelessWidget {
     final surface = dark
         ? VetColors.darkSurface
         : (neumorphic ? neuBackground : VetColors.surface);
-    // El primario deja de ser verde y pasa al morado brillante de la marca.
-    // El verde no se pierde: baja a secundario, que es donde estaba el
-    // lavanda, porque con un primario morado el lavanda ya no distinguia los
-    // dos papeles. Siguen siendo los mismos tres tonos por modo, solo cambian
-    // de puesto.
+    // El tono elegido en Ajustes es la semilla del esquema, TAMBIEN en neu.
     //
-    // En oscuro el morado va mas claro a proposito: #7C4DFF sobre el fondo
-    // #201F25 da 3.4:1, por debajo del minimo de texto; #B69BFF da 7.1:1.
-    // En claro, #7C4DFF da 4.8:1 con el blanco del boton y 4.1:1 sobre el
-    // fondo #EBECF2, lo mismo que daba el verde #087F83 (4.1:1), asi que no
-    // se pierde legibilidad respecto a lo que habia.
-    final primary = dark ? const Color(0xFFB69BFF) : VetColors.purple;
-    final secondary = dark
-        ? const Color(0xFF55E2D3)
-        : (neumorphic ? const Color(0xFF087F83) : VetColors.turquoise);
-    final tertiary = dark ? const Color(0xFFFF92C9) : VetColors.lavender;
+    // Antes el neu ignoraba por completo model.settings.palette: sembraba con
+    // un color fijo y encima machacaba primary, onPrimary, secondary y
+    // tertiary con constantes. El selector de «Elige tu tema» guardaba el
+    // indice, pintaba su chip como elegido y no cambiaba ni un pixel. Y como
+    // visualStyle viene en 'neu' de fabrica, no cambiaba para nadie.
+    //
+    // 54bddae cambio CUAL era ese color fijo (de verde a morado), que es lo
+    // que se ve hoy, pero el selector seguia muerto. Aqui se arregla lo otro:
+    // el tono elegido manda. El morado sigue siendo lo que se ve por omision
+    // porque es la semilla del indice 0.
+    //
+    // Fijar primary a mano era ademas lo que impedia que platform_review_test
+    // comprobara algo: recorre las cinco paletas exigiendo 4.5:1 entre primary
+    // y onPrimary, y las cinco le devolvian el mismo color. Al sembrar de
+    // verdad, esa prueba pasa a medir las cinco, y por eso ya no hace falta
+    // escoger a mano el #B69BFF de oscuro ni el #2A1055 de la tinta: M3 los
+    // deriva y la prueba los verifica.
+    //
+    // Lo que el neu si conserva son las SUPERFICIES. El fondo, la placa y la
+    // tinta son el ESTILO y salen de las maquetas de Ale; el acento es otra
+    // decision, y es la que el selector debe mandar.
     final scheme =
         ColorScheme.fromSeed(
-          seedColor: neumorphic
-              ? primary
-              : paletteColors[model.settings.palette],
+          seedColor: paletteColors[model.settings.palette],
           brightness: brightness,
         ).copyWith(
-          primary: neumorphic ? primary : null,
-          // Tinta sobre el primario. En oscuro el primario es claro, asi
-          // que la tinta va oscura y de la familia violeta, no el verde casi
-          // negro de antes: #2A1055 sobre #B69BFF da 7.0:1.
-          onPrimary: neumorphic
-              ? (dark ? const Color(0xFF2A1055) : Colors.white)
-              : null,
-          secondary: neumorphic ? secondary : null,
-          tertiary: neumorphic ? tertiary : null,
           surface: neumorphic ? surface : null,
           onSurface: neumorphic && !dark ? neuInk : null,
         );
+    final primary = scheme.primary;
 
     return ThemeData(
       useMaterial3: true,
@@ -253,20 +264,37 @@ class VetDosisApp extends StatelessWidget {
               ),
             )
           : null,
+      // Relieve neu en los botones, desde el tema.
+      //
+      // Antes solo cuatro accesos de Inicio lo llevaban, puestos a mano con un
+      // DecoratedBox alrededor en 486b526. El resto de la app seguia con la
+      // elevacion de Material: una sombra sola hacia abajo, que no es relieve
+      // neu y encima competia con las placas que si lo son. Ahora el degradado
+      // entra por el tema y lo reciben los 155 FilledButton y los 123
+      // OutlinedButton sin tocar una sola llamada.
+      //
+      // Lo que NO puede dar el tema es la sombra exterior: ver neuButtonStyle.
+      //
+      // El OutlinedButton pierde el trazo y gana la placa, que es lo que Ale
+      // pidio para los cuatro accesos; el degradado sale de la superficie y no
+      // del primary porque un boton secundario no debe pesar como el primario.
+      //
+      // El TextButton se queda plano a proposito: es la accion de menor
+      // jerarquia y levantarlo lo igualaria con los otros dos.
       filledButtonTheme: neumorphic
           ? FilledButtonThemeData(
-              style: ButtonStyle(
-                shadowColor: WidgetStatePropertyAll(
-                  primary.withValues(alpha: .28),
-                ),
-                elevation: WidgetStateProperty.resolveWith(
-                  (states) => states.contains(WidgetState.disabled)
-                      ? 0
-                      : states.contains(WidgetState.pressed)
-                      ? 1
-                      : 2,
-                ),
-              ),
+              style: neuButtonStyle(dark, base: scheme.primary),
+            )
+          : null,
+      outlinedButtonTheme: neumorphic
+          ? OutlinedButtonThemeData(
+              style: neuButtonStyle(dark, base: neuRaised(dark, surface))
+                  .copyWith(
+                    side: const WidgetStatePropertyAll(BorderSide.none),
+                    backgroundColor: WidgetStatePropertyAll(
+                      neuRaised(dark, surface),
+                    ),
+                  ),
             )
           : null,
       chipTheme: neumorphic
@@ -598,7 +626,15 @@ class CoreShell extends StatelessWidget {
       if (allowed('Agenda')) ('Agenda', Icons.calendar_month_outlined),
       if (allowed('Pacientes')) ('Pacientes', Icons.pets_outlined),
       if (allowed('Cálculos')) ('Cálculos', Icons.calculate_outlined),
-      ('Más', Icons.grid_view_outlined),
+      // «Más» abria SectionMenu, el MISMO widget que el cajon lateral: el
+      // quinto hueco de la barra repetia lo que el boton de hamburguesa ya
+      // daba. Lo cede al asistente, que antes solo se alcanzaba por un icono
+      // pequeño de la cabecera. Si no hay asistente (sin repositorio de IA o
+      // sin permiso) el hueco vuelve a «Más» en vez de quedarse vacio.
+      if (showsAiAction)
+        ('Asistente IA', Icons.auto_awesome)
+      else
+        ('Más', Icons.grid_view_outlined),
     ];
     final page = switch (model.screen) {
       'Cálculo rápido' ||
@@ -609,8 +645,16 @@ class CoreShell extends StatelessWidget {
       _ => model.screen,
     };
     final selected = destinations.indexWhere((entry) => entry.$1 == page);
+    // Estar en una pantalla que no esta en la barra iluminaba el ULTIMO hueco,
+    // que era «Más» y resultaba honesto: ahi se encontraba. Ahora el ultimo es
+    // el asistente, y decir «estas en el asistente» cuando estas en
+    // Hospitalizacion seria mentira. Sin coincidencia se cae a Inicio, que es
+    // la raiz; a esas pantallas se llega por el cajon.
+    final respaldo = destinations.indexWhere((entry) => entry.$1 == 'Más');
     return NavigationBar(
-      selectedIndex: selected < 0 ? destinations.length - 1 : selected,
+      selectedIndex: selected >= 0
+          ? selected
+          : (respaldo >= 0 ? respaldo : 0),
       onDestinationSelected: (index) => model.navigate(destinations[index].$1),
       destinations: [
         for (final entry in destinations)
@@ -648,8 +692,12 @@ class CoreShell extends StatelessWidget {
   ///
   /// De aqui salen tanto el `actions` como el ancho que le queda al titulo,
   /// para que no se calculen por separado y acaben discrepando.
+  /// Si la barra lleva el boton de avisos.
+  bool get showsNoticesAction =>
+      auth?.active != null && allowed('Anuncios y avisos');
+
   int get barActions =>
-      (showsAccountAction ? 1 : 0) + (showsAiAction ? 1 : 0);
+      (showsAccountAction ? 1 : 0) + (showsNoticesAction ? 1 : 0);
 
   Widget _buildShell(BuildContext context) => PopScope(
     canPop: model.screen == 'Inicio',
@@ -727,11 +775,16 @@ class CoreShell extends StatelessWidget {
               ),
               onPressed: () => openAccount(context),
             ),
-          if (showsAiAction)
+          // El asistente bajo a la barra inferior; este hueco pasa a los
+          // avisos. OJO: esta rama no tiene una pantalla de «Notificaciones»
+          // propia, asi que apunta a «Anuncios y avisos», que es lo mas
+          // cercano que si existe y es navegable. Si se fusiona
+          // feature/notificaciones-personales, el destino es esa.
+          if (showsNoticesAction)
             IconButton(
-              tooltip: 'Asistente IA',
-              onPressed: () => model.navigate('Asistente IA'),
-              icon: BrandGradientIcon(Icons.auto_awesome),
+              tooltip: 'Anuncios y avisos',
+              onPressed: () => model.navigate('Anuncios y avisos'),
+              icon: BrandGradientIcon(Icons.notifications_none),
             ),
         ],
       ),
@@ -1456,6 +1509,14 @@ class CoreShell extends StatelessWidget {
                       ? SupportScreen(
                           repository: support!,
                           member: auth!.active!,
+                          helpPanel:
+                              ai is StarterAiRepository && ai != null
+                              ? StarterHelpPanel(
+                                  repository: ai as StarterAiRepository,
+                                  chats: ai!,
+                                  clinic: auth!.active!.clinicId,
+                                )
+                              : null,
                           onAi: ai == null
                               ? null
                               : (draft) async {
@@ -1835,18 +1896,9 @@ class SoftPanel extends StatelessWidget {
         border: Border.all(
           color: dark ? VetColors.darkBorder : const Color(0xFFE4EDF3),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: dark ? const Color(0x99000000) : const Color(0xFFD5E0E7),
-            offset: const Offset(7, 8),
-            blurRadius: 18,
-          ),
-          BoxShadow(
-            color: dark ? const Color(0x182DE6D1) : const Color(0xFFFFFFFF),
-            offset: const Offset(-6, -6),
-            blurRadius: 16,
-          ),
-        ],
+        // El par del sistema. Ver la nota de clinical_vitals_screen: estos
+        // eran los valores duros de antes del relieve suave.
+        boxShadow: neuShadows(dark, depth: 1.2),
       ),
       foregroundDecoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),

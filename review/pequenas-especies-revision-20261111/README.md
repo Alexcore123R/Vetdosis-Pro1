@@ -195,6 +195,13 @@ del conjunto y no por sí solas.
 | 82 | `supabase/proposed/13V_restore_patients_apply.sql` | aplicado |
 | 83 | `supabase/migrations/20261028043154_preserve_member_history.sql` | aplicado |
 
+## Ya aplicado
+
+`aplicacion-20261111.md` registra que los cinco archivos pendientes **se
+aplicaron en Pruebas el 11/11**, con autorización de Ale, y la comprobación
+posterior objeto por objeto. Las tablas de pendientes de este README y del mapa
+describen el estado **anterior** a esa aplicación.
+
 ## Mapa de arquitectura
 
 `mapa-arquitectura-20261111.md` actualiza la matriz de estados del *Master

@@ -626,7 +626,15 @@ class CoreShell extends StatelessWidget {
       if (allowed('Agenda')) ('Agenda', Icons.calendar_month_outlined),
       if (allowed('Pacientes')) ('Pacientes', Icons.pets_outlined),
       if (allowed('Cálculos')) ('Cálculos', Icons.calculate_outlined),
-      ('Más', Icons.grid_view_outlined),
+      // «Más» abria SectionMenu, el MISMO widget que el cajon lateral: el
+      // quinto hueco de la barra repetia lo que el boton de hamburguesa ya
+      // daba. Lo cede al asistente, que antes solo se alcanzaba por un icono
+      // pequeño de la cabecera. Si no hay asistente (sin repositorio de IA o
+      // sin permiso) el hueco vuelve a «Más» en vez de quedarse vacio.
+      if (showsAiAction)
+        ('Asistente IA', Icons.auto_awesome)
+      else
+        ('Más', Icons.grid_view_outlined),
     ];
     final page = switch (model.screen) {
       'Cálculo rápido' ||
@@ -637,8 +645,16 @@ class CoreShell extends StatelessWidget {
       _ => model.screen,
     };
     final selected = destinations.indexWhere((entry) => entry.$1 == page);
+    // Estar en una pantalla que no esta en la barra iluminaba el ULTIMO hueco,
+    // que era «Más» y resultaba honesto: ahi se encontraba. Ahora el ultimo es
+    // el asistente, y decir «estas en el asistente» cuando estas en
+    // Hospitalizacion seria mentira. Sin coincidencia se cae a Inicio, que es
+    // la raiz; a esas pantallas se llega por el cajon.
+    final respaldo = destinations.indexWhere((entry) => entry.$1 == 'Más');
     return NavigationBar(
-      selectedIndex: selected < 0 ? destinations.length - 1 : selected,
+      selectedIndex: selected >= 0
+          ? selected
+          : (respaldo >= 0 ? respaldo : 0),
       onDestinationSelected: (index) => model.navigate(destinations[index].$1),
       destinations: [
         for (final entry in destinations)
@@ -676,8 +692,12 @@ class CoreShell extends StatelessWidget {
   ///
   /// De aqui salen tanto el `actions` como el ancho que le queda al titulo,
   /// para que no se calculen por separado y acaben discrepando.
+  /// Si la barra lleva el boton de avisos.
+  bool get showsNoticesAction =>
+      auth?.active != null && allowed('Anuncios y avisos');
+
   int get barActions =>
-      (showsAccountAction ? 1 : 0) + (showsAiAction ? 1 : 0);
+      (showsAccountAction ? 1 : 0) + (showsNoticesAction ? 1 : 0);
 
   Widget _buildShell(BuildContext context) => PopScope(
     canPop: model.screen == 'Inicio',
@@ -755,11 +775,16 @@ class CoreShell extends StatelessWidget {
               ),
               onPressed: () => openAccount(context),
             ),
-          if (showsAiAction)
+          // El asistente bajo a la barra inferior; este hueco pasa a los
+          // avisos. OJO: esta rama no tiene una pantalla de «Notificaciones»
+          // propia, asi que apunta a «Anuncios y avisos», que es lo mas
+          // cercano que si existe y es navegable. Si se fusiona
+          // feature/notificaciones-personales, el destino es esa.
+          if (showsNoticesAction)
             IconButton(
-              tooltip: 'Asistente IA',
-              onPressed: () => model.navigate('Asistente IA'),
-              icon: BrandGradientIcon(Icons.auto_awesome),
+              tooltip: 'Anuncios y avisos',
+              onPressed: () => model.navigate('Anuncios y avisos'),
+              icon: BrandGradientIcon(Icons.notifications_none),
             ),
         ],
       ),

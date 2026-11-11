@@ -87,6 +87,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import '../modules/core/presentation/core_view_model.dart';
 import '../modules/auth/presentation/auth_view_model.dart';
 import '../modules/auth/presentation/auth_screen.dart';
+import '../modules/ai/presentation/starter_help_panel.dart';
 
 /// Los cinco temas del selector de Ajustes, con nombre y semilla.
 ///
@@ -1483,6 +1484,14 @@ class CoreShell extends StatelessWidget {
                       ? SupportScreen(
                           repository: support!,
                           member: auth!.active!,
+                          helpPanel:
+                              ai is StarterAiRepository && ai != null
+                              ? StarterHelpPanel(
+                                  repository: ai as StarterAiRepository,
+                                  chats: ai!,
+                                  clinic: auth!.active!.clinicId,
+                                )
+                              : null,
                           onAi: ai == null
                               ? null
                               : (draft) async {

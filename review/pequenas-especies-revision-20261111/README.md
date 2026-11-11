@@ -195,6 +195,13 @@ del conjunto y no por sí solas.
 | 82 | `supabase/proposed/13V_restore_patients_apply.sql` | aplicado |
 | 83 | `supabase/migrations/20261028043154_preserve_member_history.sql` | aplicado |
 
+## Mapa de arquitectura
+
+`mapa-arquitectura-20261111.md` actualiza la matriz de estados del *Master
+Control Document* con lo verificado aquí, y corrige tres nombres de contrato que
+ese documento daba y que no existen en el servidor (`get_user_clinics`,
+`process_pos_sale`, `close_cash_shift`).
+
 ## Qué queda fuera de este alcance
 
 - **No apliqué nada.** Los cinco archivos pendientes esperan autorización

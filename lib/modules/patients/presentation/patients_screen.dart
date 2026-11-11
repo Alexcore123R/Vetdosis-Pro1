@@ -31,6 +31,7 @@ class PatientsScreen extends StatefulWidget {
     required this.repository,
     required this.member,
     this.onOpenClinical,
+    this.onOpenLab,
     this.initialPatientId,
     this.onOpenActivity,
     this.canOpenActivity,
@@ -44,6 +45,11 @@ class PatientsScreen extends StatefulWidget {
   final PatientRepository repository;
   final ClinicMembership member;
   final Future<void> Function(VetPatient)? onOpenClinical;
+
+  /// Abre las analiticas del paciente. Nulo cuando el modulo clinico no
+  /// esta disponible para esta cuenta: entonces el boton no se pinta, en
+  /// vez de pintarse y fallar al abrirse.
+  final Future<void> Function(VetPatient)? onOpenLab;
   @override
   State<PatientsScreen> createState() => _PatientsScreenState();
 }
@@ -545,6 +551,18 @@ class _PatientsScreenState extends State<PatientsScreen>
                               ),
                             ),
                           );
+                          if (mounted) await model.select(patient);
+                        },
+                ),
+
+              if (widget.onOpenLab != null)
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.science_outlined),
+                  label: const Text('Analíticas de laboratorio'),
+                  onPressed: model.busy
+                      ? null
+                      : () async {
+                          await widget.onOpenLab!(patient);
                           if (mounted) await model.select(patient);
                         },
                 ),

@@ -291,3 +291,64 @@ class _NeuPrimaryButtonState extends State<NeuPrimaryButton> {
     );
   }
 }
+
+/// Tono de una placa LEVANTADA sobre [superficie].
+///
+/// En neumorfismo lo que sobresale es mas claro que el fondo y lo hundido mas
+/// oscuro. Sin esa diferencia un boton secundario sin trazo y sin sombra
+/// exterior queda del color exacto de la pagina, o sea invisible: pasa por
+/// texto suelto y se pierde que es pulsable. Medido, no supuesto: el
+/// OutlinedButton resolvia a #EBECF2, el mismo neuBackground.
+Color neuRaised(bool dark, Color superficie) => dark
+    ? const Color(0xFF2A2932)
+    : Color.lerp(superficie, Colors.white, .55)!;
+
+/// Relieve neu para los botones, servido desde el tema.
+///
+/// El par de sombras del neu no cabe en un [ButtonStyle]: la elevacion de
+/// Material es UNA sombra hacia abajo, no una clara arriba y una oscura abajo.
+/// El hueco por el que si cabria es [ButtonStyle.backgroundBuilder], pero
+/// declararlo cambia el recorte del boton de [Clip.none] a [Clip.antiAlias]
+/// (ver ButtonStyleButton.clipBehavior), asi que una sombra EXTERIOR pintada
+/// ahi se recorta y no se ve. Comprobado en la implementacion, no supuesto.
+///
+/// Lo que si entra por ese hueco es el relieve INTERIOR: el degradado que va
+/// de un tono mas claro arriba a la izquierda al color base abajo a la
+/// derecha, que es el mismo recurso que ya usa [NeuPrimaryButton] bajo sus
+/// sombras. Da la lectura de placa levantada sin cambiar el tamano del boton
+/// ni una sola llamada.
+///
+/// Para el relieve exterior de verdad sigue estando [NeuPrimaryButton], que
+/// se envuelve a mano y por eso puede sacar la sombra fuera.
+ButtonStyle neuButtonStyle(bool dark, {required Color base}) => ButtonStyle(
+  elevation: const WidgetStatePropertyAll(0),
+  shadowColor: const WidgetStatePropertyAll(Colors.transparent),
+  shape: WidgetStatePropertyAll(
+    RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+  ),
+  backgroundBuilder: (context, states, child) {
+    if (states.contains(WidgetState.disabled)) return child ?? const SizedBox();
+    // Pulsado se invierte: la luz pasa abajo y el tono base arriba, que es
+    // como se hunde una placa. Sin esto el boton no acusa el toque, porque
+    // aqui no hay sombra que acortar.
+    final pressed = states.contains(WidgetState.pressed);
+    final lift = Color.lerp(base, Colors.white, dark ? .07 : .22)!;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        // El degradado lleva SU PROPIO radio. La documentacion de
+        // backgroundBuilder dice que lo devuelto se recorta a la forma del
+        // boton, y no basta: medi la forma del Material, salia redonda, y aun
+        // asi el boton se veia cuadrado porque el degradado se pintaba encima
+        // en rectangulo y le tapaba las esquinas. Medir la forma no es medir
+        // lo que se pinta.
+        borderRadius: BorderRadius.circular(24),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: pressed ? [base, lift] : [lift, base],
+        ),
+      ),
+      child: child,
+    );
+  },
+);

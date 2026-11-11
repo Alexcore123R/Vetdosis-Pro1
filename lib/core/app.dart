@@ -393,7 +393,15 @@ class VetDosisApp extends StatelessWidget {
       // jerarquia y levantarlo lo igualaria con los otros dos.
       filledButtonTheme: neumorphic
           ? FilledButtonThemeData(
-              style: neuButtonStyle(dark, base: scheme.primary),
+              // El principal lleva el recorrido aqua → violeta de las
+              // referencias; el tono elegido en Ajustes sigue mandando en
+              // seleccion, foco, enlaces e iconos.
+              style: neuButtonStyle(
+                dark,
+                base: scheme.primary,
+                gradient: neuActionGradient(dark),
+                ink: neuActionInk(dark),
+              ),
             )
           : null,
       // Dos ramas llegaron aqui con una idea cada una y se quedan las dos
@@ -453,9 +461,14 @@ class VetDosisApp extends StatelessWidget {
             )
           : null,
       navigationBarTheme: neumorphic
+          // La pestana activa es una placa clara redondeada con su
+          // etiqueta en el color primario, no la pildora de Material.
           ? NavigationBarThemeData(
               backgroundColor: surface,
-              indicatorColor: primary.withValues(alpha: dark ? 0.22 : 0.18),
+              indicatorColor: neuRaised(dark, surface),
+              indicatorShape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
               elevation: 0,
             )
           : null,
@@ -849,6 +862,30 @@ class CoreShell extends StatelessWidget {
   int get barActions =>
       (showsAccountAction ? 1 : 0) + (showsNoticesAction ? 1 : 0);
 
+  static bool _neu(BuildContext context) =>
+      Theme.of(context).extension<WorkspaceStyle>()?.neumorphic == true;
+
+  /// La hoja del contenido: en Neu sube con esquinas redondeadas sobre la
+  /// banda de marca que continua la de la barra.
+  Widget _sheet(BuildContext context, Widget child) {
+    if (!_neu(context)) return child;
+    final theme = Theme.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(gradient: screenHeaderGradient(theme)),
+      // Material y no Container: los ListTile de dentro pintan su fondo y
+      // sus ondas sobre el Material mas cercano, y un color intermedio se
+      // los taparia.
+      child: Material(
+        color: theme.scaffoldBackgroundColor,
+        clipBehavior: Clip.antiAlias,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: child,
+      ),
+    );
+  }
+
   Widget _buildShell(BuildContext context) => PopScope(
     canPop: model.screen == 'Inicio',
     onPopInvokedWithResult: (didPop, result) {
@@ -856,6 +893,18 @@ class CoreShell extends StatelessWidget {
     },
     child: Scaffold(
       appBar: AppBar(
+        // En Neu la barra lleva la banda de marca y la hoja del contenido
+        // sube sobre ella; en Clasico se queda con el color del tema.
+        backgroundColor: _neu(context) ? Colors.transparent : null,
+        scrolledUnderElevation: _neu(context) ? 0 : null,
+        flexibleSpace: _neu(context)
+            ? DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: screenHeaderGradient(Theme.of(context)),
+                ),
+                child: const SizedBox.expand(),
+              )
+            : null,
         // El alto se calcula con la misma regla que usa ScreenTitle para
         // decidir si el nombre cabe en una linea o necesita dos. Si no, un
         // titulo de dos lineas se recorta contra una barra pensada para una.
@@ -934,7 +983,23 @@ class CoreShell extends StatelessWidget {
             IconButton(
               tooltip: 'Anuncios y avisos',
               onPressed: () => model.navigate('Anuncios y avisos'),
-              icon: BrandGradientIcon(Icons.notifications_none),
+              // Sobre la banda el degradado del icono se perderia: en Neu
+              // va dentro de una placa del color del lienzo, como los
+              // botones de cabecera de las referencias.
+              icon: _neu(context)
+                  ? Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: neuShadows(
+                          Theme.of(context).brightness == Brightness.dark,
+                          depth: .5,
+                        ),
+                      ),
+                      child: BrandGradientIcon(Icons.notifications_none),
+                    )
+                  : BrandGradientIcon(Icons.notifications_none),
             ),
         ],
       ),
@@ -942,11 +1007,28 @@ class CoreShell extends StatelessWidget {
         child: SafeArea(
           child: ListView(
             children: [
-              const ListTile(
-                title: Text('VetDosis Pro'),
-                subtitle: Text('Tu espacio veterinario'),
-              ),
-              const Divider(),
+              // En Neu el cajon abre con la misma banda de marca que la
+              // barra, con el logotipo dentro; en Clasico sigue el renglon.
+              if (_neu(context))
+                Container(
+                  margin: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    gradient: screenHeaderGradient(Theme.of(context)),
+                  ),
+                  child: const Align(
+                    alignment: Alignment.centerLeft,
+                    child: VetDosisBrand(),
+                  ),
+                )
+              else ...[
+                const ListTile(
+                  title: Text('VetDosis Pro'),
+                  subtitle: Text('Tu espacio veterinario'),
+                ),
+                const Divider(),
+              ],
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Text('Área de trabajo'),
@@ -1027,7 +1109,9 @@ class CoreShell extends StatelessWidget {
               ),
             )
           : null,
-      body: SafeArea(
+      body: _sheet(
+        context,
+        SafeArea(
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 1100),
@@ -1700,6 +1784,7 @@ class CoreShell extends StatelessWidget {
               ],
             ),
           ),
+        ),
         ),
       ),
     ),

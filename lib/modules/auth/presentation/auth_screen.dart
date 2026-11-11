@@ -1,4 +1,5 @@
 import 'team_duty_screen.dart';
+import '../../../core/widgets/brand_gradient.dart';
 import '../../../core/widgets/neu_identity.dart';
 import '../../../core/widgets/google_mark.dart';
 import '../../permissions/domain/permission_repository.dart';
@@ -38,8 +39,18 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     final model = widget.model;
-    return Scaffold(
-      appBar: AppBar(title: const Text('VetDosis Pro')),
+    // Sin sesion, la pantalla sigue la referencia de «Iniciar sesion»: velo
+    // de marca al fondo, titulo centrado y campos con su icono.
+    final veiled = AccessBackdrop.appliesTo(context);
+    final entering = model?.signedIn != true;
+    return AccessBackdrop(
+      child: Scaffold(
+      backgroundColor: veiled ? Colors.transparent : null,
+      appBar: AppBar(
+        title: const Text('VetDosis Pro'),
+        backgroundColor: veiled ? Colors.transparent : null,
+        scrolledUnderElevation: veiled ? 0 : null,
+      ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -58,6 +69,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       : _register
                       ? 'Registro de usuario'
                       : 'Inicio de sesión',
+                  textAlign: veiled && entering ? TextAlign.center : null,
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 const SizedBox(height: 12),
@@ -119,6 +131,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 ] else if (!model.signedIn) ...[
                   Text(
                     'Ingresa con tu cuenta para acceder a las clínicas de tu equipo.',
+                    textAlign: veiled ? TextAlign.center : null,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).hintColor,
                     ),
@@ -134,6 +147,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           autofillHints: const [AutofillHints.email],
                           decoration: const InputDecoration(
                             labelText: 'Correo electrónico',
+                            prefixIcon: Icon(Icons.mail_outline),
                           ),
                           validator: (value) =>
                               value != null &&
@@ -151,6 +165,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             autofillHints: const [AutofillHints.password],
                             decoration: InputDecoration(
                               labelText: 'Contraseña',
+                              prefixIcon: const Icon(Icons.lock_outline),
                               suffixIcon: IconButton(
                                 tooltip: _showPassword
                                     ? 'Ocultar contraseña'
@@ -210,6 +225,19 @@ class _AuthScreenState extends State<AuthScreen> {
                     const SizedBox(height: 14),
                     OutlinedButton(
                       onPressed: model.busy ? null : model.googleSignIn,
+                      // En Neu el acceso con Google va en placa oscura, como
+                      // en la referencia: es el unico boton de la pantalla
+                      // que no es de la marca y asi no compite con «Ingresar».
+                      style: veiled
+                          ? OutlinedButton.styleFrom(
+                              backgroundBuilder: plainButtonLayer,
+                              backgroundColor: const Color(0xFF2B2B31),
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: const Color(0x662B2B31),
+                              side: BorderSide.none,
+                              minimumSize: const Size(0, 48),
+                            )
+                          : null,
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         mainAxisSize: MainAxisSize.min,
@@ -327,6 +355,7 @@ class _AuthScreenState extends State<AuthScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

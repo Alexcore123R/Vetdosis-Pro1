@@ -203,6 +203,7 @@ class CalculatorSurface extends StatelessWidget {
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(
             backgroundColor: accent,
+            backgroundBuilder: plainButtonLayer,
             // La tinta se elige midiendo contra el acento ya ajustado. Fijar
             // blanco dejaba el peor caso en 4.51:1, justo en el limite de
             // 4.5:1 que pide el texto: cualquier retoque posterior lo rompia.

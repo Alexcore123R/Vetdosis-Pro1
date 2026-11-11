@@ -1,4 +1,4 @@
-import '../../../core/widgets/neu_identity.dart';
+import '../../../core/widgets/contrast.dart';
 import '../../../core/widgets/neu_header_card.dart';
 import 'home_pilot.dart';
 import '../../../vet_ui/vet_components.dart';
@@ -55,6 +55,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void openPage(String page) {
     if (routeVisible(page)) widget.onNavigate(page);
   }
+
   @override
   void initState() {
     super.initState();
@@ -75,6 +76,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String time(DateTime date) {
     final d = model.localTime(date);
     return '${d.day}/${d.month}/${d.year} · ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+  }
+
+  /// Solo la hora, para la etiqueta de las citas de hoy.
+  String hour(DateTime date) {
+    final d = model.localTime(date);
+    return '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
   }
 
   // Una sola tabla de color por seccion, la de workspace_panel.dart, en vez
@@ -144,7 +151,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   List<(String, int)>? get activity {
     if (model.member == null ||
-        !model.canSummarize('agenda') || !routeVisible('Agenda') ||
+        !model.canSummarize('agenda') ||
+        !routeVisible('Agenda') ||
         model.agenda == null) {
       return null;
     }
@@ -163,21 +171,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   List<(String, String, IconData, Color)> get summaryMetrics => [
-    if (model.member != null && model.canSeePatients && routeVisible('Pacientes'))
+    if (model.member != null &&
+        model.canSeePatients &&
+        routeVisible('Pacientes'))
       (
         'Pacientes',
         model.patientCount?.toString() ?? '—',
         Icons.pets_outlined,
         VetColors.turquoise,
       ),
-    if (model.member != null && model.canSummarize('agenda') && routeVisible('Agenda'))
+    if (model.member != null &&
+        model.canSummarize('agenda') &&
+        routeVisible('Agenda'))
       (
         'Citas por venir',
         model.agenda == null ? '—' : '${model.upcoming.length}',
         Icons.calendar_month_outlined,
         VetColors.violet,
       ),
-    if (model.member != null && model.canSummarize('hospital') && routeVisible('Hospitalización'))
+    if (model.member != null &&
+        model.canSummarize('hospital') &&
+        routeVisible('Hospitalización'))
       (
         'En hospital',
         model.ward == null ? '—' : '${model.ward!.stays.length}',
@@ -186,7 +200,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     if (model.member != null &&
         !model.member!.isPersonal &&
-        model.canSummarize('agenda') && routeVisible('Pendientes del equipo'))
+        model.canSummarize('agenda') &&
+        routeVisible('Pendientes del equipo'))
       (
         'Tareas visibles',
         model.agenda == null ? '—' : '${model.pendingTasks.length}',
@@ -320,8 +335,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           if (m.updated != null) Text('Última consulta: ${time(m.updated!)}'),
           if (m.busy) const LinearProgressIndicator(),
-          if (widget.statisticsOnly &&
-              routeVisible('Estadísticas'))
+          if (widget.statisticsOnly && routeVisible('Estadísticas'))
             statisticsPanel,
           if (widget.homePilot && !widget.statisticsOnly) ...[
             const SizedBox(height: 16),
@@ -349,9 +363,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ('Cálculo rápido', 'Cálculo rápido'),
                     ('Hospital', 'Hospitalización'),
                   ])
-                    if (routeVisible(action.$2))
-                      action,
+                    if (routeVisible(action.$2)) action,
                 ],
+                // Solo datos ya consultados; si aun no llegaron, el modulo
+                // se queda con su pista en vez de mostrar un cero falso.
+                details: {
+                  'Inventario': m.stock == null
+                      ? 'Productos y lotes'
+                      : '${m.products.length} artículos',
+                  'Pacientes': m.patientCount == null || !m.canSeePatients
+                      ? 'Expedientes'
+                      : '${m.patientCount} registrados',
+                  'Receta': 'Emitir y consultar',
+                  'Agenda': m.agenda == null || !m.canSummarize('agenda')
+                      ? 'Citas y recordatorios'
+                      : '${m.upcoming.length} por venir',
+                  'Cálculo rápido': 'Dosis por peso',
+                  'Hospitalización':
+                      m.ward == null || !m.canSummarize('hospital')
+                      ? 'Pacientes internados'
+                      : '${m.ward!.stays.length} internados',
+                },
                 onNavigate: openPage,
               ),
               const SizedBox(height: 16),
@@ -366,34 +398,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ('Escáner', 'Escanear producto'),
                   ])
                     if (routeVisible(action.$2))
-                      // Sin la linea de borde y con el relieve del sistema:
-                      // la pildora se levanta de la superficie en vez de
-                      // dibujarse con un trazo, como el resto del neu.
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: neuShadows(
-                            Theme.of(context).brightness == Brightness.dark,
-                            depth: .55,
+                      // El relieve y la falta de trazo los pone ya el
+                      // tema Neu en todos los botones secundarios.
+                      OutlinedButton.icon(
+                        onPressed: () => openPage(action.$2),
+                        icon: Icon(
+                          sectionIcon(action.$2),
+                          color: readableOn(
+                            sectionAccent(action.$2),
+                            Theme.of(context).colorScheme.surface,
                           ),
                         ),
-                        child: OutlinedButton.icon(
-                          onPressed: () => openPage(action.$2),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide.none,
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.surface,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                          ),
-                          icon: Icon(
-                            sectionIcon(action.$2),
-                            color: sectionAccent(action.$2),
-                          ),
-                          label: Text(action.$1),
-                        ),
+                        label: Text(action.$1),
                       ),
                 ],
               ),
@@ -429,83 +445,87 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                 ],
               ),
-            if (widget.homePilot &&
-                routeVisible('Estadísticas'))
+            if (widget.homePilot && routeVisible('Estadísticas'))
               ExpansionTile(
                 title: const Text('Ver estadísticas'),
                 children: [statisticsPanel],
               ),
-            if (routeAuthorized('Hospitalización') || routeVisible('Agenda') || routeVisible('Inventario'))
-            panel(
-              'Alertas y recordatorios',
-              routeAuthorized('Hospitalización')
-                  ? 'Hospitalización'
-                  : routeVisible('Agenda')
-                      ? 'Agenda'
-                      : 'Inventario',
-              [
-                if (m.canSummarize('hospital') && routeAuthorized('Hospitalización'))
-                  unavailable(
-                    'Hospitalización',
-                    m.ward != null,
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          '${m.overdue.length} dosis pendientes cuyo horario ya llegó.',
-                        ),
-                        for (final t in m.overdue.take(3))
-                          ListTile(
-                            title: Text('${m.patient(t)} · ${t.label}'),
-                            subtitle: Text(
-                              'Horario: ${time(m.effectiveTime(t))}',
-                            ),
-                            onTap: () => openPage('Hospitalización'),
+            if (routeAuthorized('Hospitalización') ||
+                routeVisible('Agenda') ||
+                routeVisible('Inventario'))
+              panel(
+                'Alertas y recordatorios',
+                routeAuthorized('Hospitalización')
+                    ? 'Hospitalización'
+                    : routeVisible('Agenda')
+                    ? 'Agenda'
+                    : 'Inventario',
+                [
+                  if (m.canSummarize('hospital') &&
+                      routeAuthorized('Hospitalización'))
+                    unavailable(
+                      'Hospitalización',
+                      m.ward != null,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            '${m.overdue.length} dosis pendientes cuyo horario ya llegó.',
                           ),
-                      ],
-                    ),
-                  ),
-                if (m.canSummarize('inventory') && routeVisible('Inventario') &&
-                    widget.alerts?.stockWarnings != false)
-                  unavailable(
-                    'Inventario',
-                    m.stock != null,
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          '${m.lowStock.length} productos con stock disponible bajo o igual al mínimo.',
-                        ),
-                        for (final p in m.lowStock.take(3))
-                          ListTile(
-                            title: Text('${p['nombre']}'),
-                            subtitle: Text(
-                              'Disponible: ${p['available_stock']} · mínimo ${p['stock_minimo']}',
+                          for (final t in m.overdue.take(3))
+                            ListTile(
+                              title: Text('${m.patient(t)} · ${t.label}'),
+                              subtitle: Text(
+                                'Horario: ${time(m.effectiveTime(t))}',
+                              ),
+                              onTap: () => openPage('Hospitalización'),
                             ),
-                            onTap: () => openPage('Inventario'),
-                          ),
-                      ],
-                    ),
-                  ),
-                if (m.canSummarize('hospital') && routeAuthorized('Hospitalización') &&
-                    (widget.alerts?.leadMinutes ?? 0) > 0)
-                  for (final t
-                      in m.nextDoses
-                          .where(
-                            (t) =>
-                                m.effectiveTime(t).difference(m.now()) <=
-                                Duration(minutes: widget.alerts!.leadMinutes),
-                          )
-                          .take(3))
-                    ListTile(
-                      title: Text(
-                        'Próxima dosis · ${m.patient(t)} · ${t.label}',
+                        ],
                       ),
-                      subtitle: Text(time(m.effectiveTime(t))),
-                      onTap: () => openPage('Hospitalización'),
                     ),
-              ],
-            ),
+                  if (m.canSummarize('inventory') &&
+                      routeVisible('Inventario') &&
+                      widget.alerts?.stockWarnings != false)
+                    unavailable(
+                      'Inventario',
+                      m.stock != null,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            '${m.lowStock.length} productos con stock disponible bajo o igual al mínimo.',
+                          ),
+                          for (final p in m.lowStock.take(3))
+                            ListTile(
+                              title: Text('${p['nombre']}'),
+                              subtitle: Text(
+                                'Disponible: ${p['available_stock']} · mínimo ${p['stock_minimo']}',
+                              ),
+                              onTap: () => openPage('Inventario'),
+                            ),
+                        ],
+                      ),
+                    ),
+                  if (m.canSummarize('hospital') &&
+                      routeAuthorized('Hospitalización') &&
+                      (widget.alerts?.leadMinutes ?? 0) > 0)
+                    for (final t
+                        in m.nextDoses
+                            .where(
+                              (t) =>
+                                  m.effectiveTime(t).difference(m.now()) <=
+                                  Duration(minutes: widget.alerts!.leadMinutes),
+                            )
+                            .take(3))
+                      ListTile(
+                        title: Text(
+                          'Próxima dosis · ${m.patient(t)} · ${t.label}',
+                        ),
+                        subtitle: Text(time(m.effectiveTime(t))),
+                        onTap: () => openPage('Hospitalización'),
+                      ),
+                ],
+              ),
             // Settings for alarms already on this device remain reachable even
             // when a clinic hides the hospital navigation shortcut.
             if (widget.alerts != null && routeAuthorized('Hospitalización'))
@@ -541,11 +561,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       if (m.todayAppointments.isEmpty)
                         const Text('No hay citas futuras agendadas para hoy.'),
                       for (final a in m.todayAppointments)
-                        ListTile(
-                          title: Text('${a['patient_name']}'),
-                          subtitle: Text(
-                            '${time(m.starts(a)!)} · ${a['kind']}',
-                          ),
+                        HomeAppointmentRow(
+                          title: '${a['patient_name']}',
+                          subtitle: '${time(m.starts(a)!)} · ${a['kind']}',
+                          tag: hour(m.starts(a)!),
+                          color: sectionColor('Agenda'),
                           onTap: () => openPage('Agenda'),
                         ),
                     ],
@@ -563,11 +583,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           'No hay citas recientes en los datos consultados.',
                         ),
                       for (final a in m.recent.take(3))
-                        ListTile(
-                          title: Text('${a['patient_name']}'),
-                          subtitle: Text(
-                            '${time(m.starts(a)!)} · ${a['state']}',
-                          ),
+                        HomeAppointmentRow(
+                          title: '${a['patient_name']}',
+                          subtitle: '${time(m.starts(a)!)} · ${a['state']}',
+                          color: sectionColor('Agenda'),
                           onTap: () => openPage('Agenda'),
                         ),
                     ],
@@ -575,120 +594,123 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ]),
             ],
-            if (m.canSummarize('inventory') && (routeVisible('Inventario') || routeVisible('Caja'))) ...[
-              if (routeVisible('Inventario')) panel('Inventario', 'Inventario', [
-                unavailable(
-                  'Inventario',
-                  m.stock != null,
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        '${m.products.length} artículos activos · ${m.lowStock.length} por revisar',
-                      ),
-                      if (m.canSeeClinicSales && routeVisible('Caja'))
-                        metrics([
-                          (
-                            'Valor a costo',
-                            m.valueAtCost?.display ?? 'No disponible',
-                          ),
-                          (
-                            'Valor a venta',
-                            m.valueAtSale?.display ?? 'No disponible',
-                          ),
-                          (
-                            'Margen potencial',
-                            m.potentialMargin?.display ?? 'No disponible',
-                          ),
-                        ]),
-                      const Text(
-                        'Existencias disponibles por unidad; no incluye lotes caducados.',
-                      ),
-                      if (m.stockByUnit == null)
-                        const Text('Existencias por unidad no disponibles.'),
-                      for (final e
-                          in (m.stockByUnit ?? <String, Quantity>{}).entries)
-                        Text('${e.value.display()} ${e.key}'),
-                      const Text(
-                        'Margen potencial antes de comisiones y gastos; no es utilidad neta.',
-                      ),
-                      TextField(
-                        controller: search,
-                        decoration: const InputDecoration(
-                          labelText: 'Buscar producto por nombre o código',
-                          prefixIcon: Icon(Icons.search),
-                        ),
-                        onChanged: (_) => setState(() {}),
-                      ),
-                      if (search.text.trim().isNotEmpty)
-                        for (final p
-                            in m.products
-                                .where(
-                                  (p) =>
-                                      '${p['nombre']} ${p['codigo_barras'] ?? ''}'
-                                          .toLowerCase()
-                                          .contains(
-                                            search.text.trim().toLowerCase(),
-                                          ),
-                                )
-                                .take(5))
-                          ListTile(
-                            title: Text('${p['nombre']}'),
-                            subtitle: Text(
-                              'Disponible: ${p['available_stock']} ${p['stock_unit']}',
-                            ),
-                            onTap: () => openPage('Inventario'),
-                          ),
-                    ],
-                  ),
-                ),
-              ]),
-              if (routeVisible('Caja')) panel('Caja del turno', 'Caja', [
-                unavailable(
-                  'Inventario',
-                  m.stock != null,
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (m.ownShift == null) ...[
-                        const Text(
-                          'Tu caja está cerrada. Captura el fondo inicial al abrir.',
-                        ),
-                        FilledButton.icon(
-                          onPressed: widget.offline || m.busy || openingCash
-                              ? null
-                              : openCash,
-                          icon: const Icon(Icons.lock_open),
-                          label: const Text('Abrir caja'),
-                        ),
-                      ] else ...[
+            if (m.canSummarize('inventory') &&
+                (routeVisible('Inventario') || routeVisible('Caja'))) ...[
+              if (routeVisible('Inventario'))
+                panel('Inventario', 'Inventario', [
+                  unavailable(
+                    'Inventario',
+                    m.stock != null,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
                         Text(
-                          'Tu caja está abierta · fondo inicial: ${money(m.ownShift!['opening_cash'])}',
+                          '${m.products.length} artículos activos · ${m.lowStock.length} por revisar',
                         ),
-                        FilledButton(
-                          onPressed: () => openPage('Caja'),
-                          child: const Text('Venta o revisión del turno'),
-                        ),
-                      ],
-                      const Text('Últimos cortes visibles'),
-                      if (m.recentCuts.isEmpty)
+                        if (m.canSeeClinicSales && routeVisible('Caja'))
+                          metrics([
+                            (
+                              'Valor a costo',
+                              m.valueAtCost?.display ?? 'No disponible',
+                            ),
+                            (
+                              'Valor a venta',
+                              m.valueAtSale?.display ?? 'No disponible',
+                            ),
+                            (
+                              'Margen potencial',
+                              m.potentialMargin?.display ?? 'No disponible',
+                            ),
+                          ]),
                         const Text(
-                          'No hay cortes cerrados en los datos consultados.',
+                          'Existencias disponibles por unidad; no incluye lotes caducados.',
                         ),
-                      for (final sh in m.recentCuts)
-                        ListTile(
-                          title: Text(
-                            'Cierre: ${time(DateTime.parse(sh['closed_at']))}',
-                          ),
-                          subtitle: Text(
-                            'Contado: ${money(sh['counted_cash'])}',
-                          ),
-                          onTap: () => openPage('Caja'),
+                        if (m.stockByUnit == null)
+                          const Text('Existencias por unidad no disponibles.'),
+                        for (final e
+                            in (m.stockByUnit ?? <String, Quantity>{}).entries)
+                          Text('${e.value.display()} ${e.key}'),
+                        const Text(
+                          'Margen potencial antes de comisiones y gastos; no es utilidad neta.',
                         ),
-                    ],
+                        TextField(
+                          controller: search,
+                          decoration: const InputDecoration(
+                            labelText: 'Buscar producto por nombre o código',
+                            prefixIcon: Icon(Icons.search),
+                          ),
+                          onChanged: (_) => setState(() {}),
+                        ),
+                        if (search.text.trim().isNotEmpty)
+                          for (final p
+                              in m.products
+                                  .where(
+                                    (p) =>
+                                        '${p['nombre']} ${p['codigo_barras'] ?? ''}'
+                                            .toLowerCase()
+                                            .contains(
+                                              search.text.trim().toLowerCase(),
+                                            ),
+                                  )
+                                  .take(5))
+                            ListTile(
+                              title: Text('${p['nombre']}'),
+                              subtitle: Text(
+                                'Disponible: ${p['available_stock']} ${p['stock_unit']}',
+                              ),
+                              onTap: () => openPage('Inventario'),
+                            ),
+                      ],
+                    ),
                   ),
-                ),
-              ]),
+                ]),
+              if (routeVisible('Caja'))
+                panel('Caja del turno', 'Caja', [
+                  unavailable(
+                    'Inventario',
+                    m.stock != null,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (m.ownShift == null) ...[
+                          const Text(
+                            'Tu caja está cerrada. Captura el fondo inicial al abrir.',
+                          ),
+                          FilledButton.icon(
+                            onPressed: widget.offline || m.busy || openingCash
+                                ? null
+                                : openCash,
+                            icon: const Icon(Icons.lock_open),
+                            label: const Text('Abrir caja'),
+                          ),
+                        ] else ...[
+                          Text(
+                            'Tu caja está abierta · fondo inicial: ${money(m.ownShift!['opening_cash'])}',
+                          ),
+                          FilledButton(
+                            onPressed: () => openPage('Caja'),
+                            child: const Text('Venta o revisión del turno'),
+                          ),
+                        ],
+                        const Text('Últimos cortes visibles'),
+                        if (m.recentCuts.isEmpty)
+                          const Text(
+                            'No hay cortes cerrados en los datos consultados.',
+                          ),
+                        for (final sh in m.recentCuts)
+                          ListTile(
+                            title: Text(
+                              'Cierre: ${time(DateTime.parse(sh['closed_at']))}',
+                            ),
+                            subtitle: Text(
+                              'Contado: ${money(sh['counted_cash'])}',
+                            ),
+                            onTap: () => openPage('Caja'),
+                          ),
+                      ],
+                    ),
+                  ),
+                ]),
               if (m.canSeeClinicSales && routeVisible('Caja'))
                 panel('Ventas de hoy', 'Caja', [
                   unavailable(
@@ -742,7 +764,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ]),
             ],
-            if (m.canSummarize('hospital') && routeAuthorized('Hospitalización'))
+            if (m.canSummarize('hospital') &&
+                routeAuthorized('Hospitalización'))
               panel('Próximas dosis', 'Hospitalización', [
                 unavailable(
                   'Hospitalización',
@@ -763,7 +786,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
               ]),
-            if (m.member != null && m.commissions != null && routeVisible('Servicios'))
+            if (m.member != null &&
+                m.commissions != null &&
+                routeVisible('Servicios'))
               panel('Mis comisiones', 'Servicios', [
                 Text(
                   'Saldo de servicios cobrados pendiente de liquidar: ${money(m.ownCommission?['amount'] ?? '0')}',
@@ -776,7 +801,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   'El porcentaje se configura por servicio. Solo cuentan ventas vigentes.',
                 ),
               ]),
-            if (m.member?.isPersonal == false && m.attendanceWeek != null && routeVisible('Checado'))
+            if (m.member?.isPersonal == false &&
+                m.attendanceWeek != null &&
+                routeVisible('Checado'))
               panel('Puntualidad y asistencia', 'Checado', [
                 if (m.attendanceWeek!['week_summary'] is Map) ...[
                   Text(
@@ -822,12 +849,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     m.rows(m.agenda, 'people'),
                                   ),
                           ),
-                          onTap: () =>
-                              openPage('Pendientes del equipo'),
+                          onTap: () => openPage('Pendientes del equipo'),
                         ),
                       TextButton(
-                        onPressed: () =>
-                            openPage('Pendientes del equipo'),
+                        onPressed: () => openPage('Pendientes del equipo'),
                         child: const Text('Crear o revisar pendientes'),
                       ),
                     ],

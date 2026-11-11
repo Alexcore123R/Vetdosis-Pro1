@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/widgets/brand_gradient.dart';
 import '../../../vet_ui/vet_components.dart';
 import '../../../vet_ui/vet_theme.dart';
 import '../../auth/presentation/auth_screen.dart';
@@ -60,7 +61,11 @@ class _PublicWelcomeScreenState extends State<PublicWelcomeScreen> {
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
       children: children,
     );
-    return Scaffold(
+    return AccessBackdrop(
+      child: Scaffold(
+      backgroundColor: AccessBackdrop.appliesTo(context)
+          ? Colors.transparent
+          : null,
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -138,6 +143,7 @@ class _PublicWelcomeScreenState extends State<PublicWelcomeScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

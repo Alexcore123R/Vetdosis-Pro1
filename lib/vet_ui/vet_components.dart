@@ -390,37 +390,100 @@ class VetIconBox extends StatelessWidget {
 }
 
 /// Título de pantalla o de bloque con una línea de apoyo opcional.
+/// Con [icon] el encabezado lleva delante un cuadro tintado, que es lo que
+/// permite encontrar donde empieza cada bloque sin leerlo. En una pantalla
+/// larga —Caja, Formatos— el ojo salta de cuadro en cuadro; sin el hay que
+/// recorrer el texto para saber si una linea es titulo o parrafo.
+///
+/// [step] pinta el numero dentro del cuadro en lugar del icono, para las
+/// pantallas que van por pasos numerados.
 class VetSectionHeader extends StatelessWidget {
   const VetSectionHeader({
     super.key,
     required this.title,
     this.subtitle,
     this.large = false,
-  });
+    this.icon,
+    this.step,
+    this.accent,
+  }) : assert(
+         icon == null || step == null,
+         'El cuadro pinta el numero o el icono, no los dos.',
+       );
   final String title;
   final String? subtitle;
   final bool large;
+
+  /// Icono del cuadro tintado que abre el bloque.
+  final IconData? icon;
+
+  /// Numero del paso, si el bloque es un paso de un recorrido.
+  final int? step;
+
+  /// Tono del cuadro. Por omision el primario del tema.
+  final Color? accent;
+
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    // El apoyo no lleva el gris fijo de antes: sobre el fondo oscuro
+    // #201F25 ese gris queda en 3.6:1, por debajo del minimo de texto. El del
+    // esquema se adapta a los dos modos.
+    final supportColor = theme.colorScheme.onSurfaceVariant;
+    final boxAccent = accent ?? theme.colorScheme.primary;
+    final titleStyle = large ? textTheme.headlineSmall : textTheme.titleMedium;
+    final texts = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(title, style: titleStyle),
+        if (subtitle != null) ...[
+          const SizedBox(height: 4),
+          // La indicacion va chica y en otro tono, no solo en otra linea.
+          // Con el mismo cuerpo y el mismo gris que el resto, el titulo y su
+          // explicacion se leian como un bloque y no como dos cosas.
+          Text(
+            subtitle!,
+            style: textTheme.bodySmall?.copyWith(color: supportColor),
+          ),
+        ],
+      ],
+    );
+    final boxSize = large ? 44.0 : 36.0;
+    final Widget? box = switch ((icon, step)) {
+      (final IconData i, _) => VetIconBox(
+        icon: i,
+        accent: boxAccent,
+        size: boxSize,
+      ),
+      (_, final int n) => Container(
+        width: boxSize,
+        height: boxSize,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: boxAccent.withValues(alpha: .15),
+          borderRadius: BorderRadius.circular(boxSize * .32),
+        ),
+        child: Text(
+          '$n',
+          style: textTheme.titleMedium?.copyWith(color: boxAccent),
+        ),
+      ),
+      _ => null,
+    };
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: large ? textTheme.headlineSmall : textTheme.titleMedium,
-          ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              subtitle!,
-              style: textTheme.bodyMedium?.copyWith(color: VetColors.muted),
+      child: box == null
+          ? texts
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                box,
+                const SizedBox(width: 12),
+                Expanded(child: texts),
+              ],
             ),
-          ],
-        ],
-      ),
     );
   }
 }

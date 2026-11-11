@@ -89,6 +89,34 @@ import '../modules/auth/presentation/auth_view_model.dart';
 import '../modules/auth/presentation/auth_screen.dart';
 import '../modules/ai/presentation/starter_help_panel.dart';
 
+/// Linea de un control de seleccion en estilo neumorfico.
+///
+/// Solo hay linea cuando el control esta elegido —o mientras se pulsa o
+/// tiene el foco, que es cuando conviene senalarlo—, y es la del primario.
+/// En reposo no lleva ninguna: lo que lo separa del fondo es el relieve.
+BorderSide? Function(Set<WidgetState>) _neuSide(Color primary) =>
+    (states) =>
+        states.contains(WidgetState.disabled)
+        ? BorderSide.none
+        : states.contains(WidgetState.selected) ||
+              states.contains(WidgetState.pressed) ||
+              states.contains(WidgetState.focused)
+        ? BorderSide(color: primary, width: 1.5)
+        : BorderSide.none;
+
+/// Relieve del control: levantado en reposo, hundido al pulsar, plano si
+/// esta deshabilitado, que es como se comporta una tecla de verdad.
+double _neuElevation(Set<WidgetState> states) =>
+    states.contains(WidgetState.disabled)
+    ? 0
+    : states.contains(WidgetState.pressed)
+    ? 1
+    : 2;
+
+/// Sombra del relieve, en el mismo tono que usan las tarjetas.
+Color _neuShadow(bool dark) =>
+    dark ? const Color(0x59000000) : const Color(0x47B8BDCE);
+
 /// Los cinco temas del selector de Ajustes, con nombre y semilla.
 ///
 /// El indice 0 es el verdeazulado, que es el tema por omision: Ale lo pidio
@@ -115,6 +143,82 @@ const paletteColors = [
   VetColors.brandLilac,
   VetColors.mint,
 ];
+
+/// Mantiene el Navigator estable, pero elimina las rutas privadas cuando
+/// cambia la identidad o el contexto de seguridad de la sesión.
+class SessionRouteGuard extends StatefulWidget {
+  const SessionRouteGuard({
+    super.key,
+    required this.auth,
+    required this.builder,
+  });
+
+  final AuthViewModel? auth;
+  final Widget Function(
+    BuildContext context,
+    GlobalKey<NavigatorState> navigatorKey,
+  ) builder;
+
+  @override
+  State<SessionRouteGuard> createState() => _SessionRouteGuardState();
+}
+
+class _SessionRouteGuardState extends State<SessionRouteGuard> {
+  final GlobalKey<NavigatorState> _navigatorKey =
+      GlobalKey<NavigatorState>();
+  String? _sessionFingerprint;
+
+  String _fingerprint(AuthViewModel? auth) {
+    if (auth == null) return 'no-auth';
+    final member = auth.active;
+    return [
+      auth.repository.userId ?? 'signed-out',
+      auth.signedIn,
+      auth.recoveringPassword,
+      auth.offline,
+      member?.userId ?? '',
+      member?.clinicId ?? '',
+      member?.role.name ?? '',
+    ].join('|');
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _sessionFingerprint = _fingerprint(widget.auth);
+    widget.auth?.addListener(_handleSessionChange);
+  }
+
+  @override
+  void didUpdateWidget(covariant SessionRouteGuard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.auth != widget.auth) {
+      oldWidget.auth?.removeListener(_handleSessionChange);
+      _sessionFingerprint = _fingerprint(widget.auth);
+      widget.auth?.addListener(_handleSessionChange);
+    }
+  }
+
+  void _handleSessionChange() {
+    final next = _fingerprint(widget.auth);
+    if (next == _sessionFingerprint) return;
+    _sessionFingerprint = next;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _navigatorKey.currentState?.popUntil((route) => route.isFirst);
+    });
+  }
+
+  @override
+  void dispose() {
+    widget.auth?.removeListener(_handleSessionChange);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      widget.builder(context, _navigatorKey);
+}
 
 /// Raiz de la aplicacion: arma el tema, decide si hay que autenticar y
 /// entrega los repositorios que cada modulo necesita.
@@ -222,6 +326,12 @@ class VetDosisApp extends StatelessWidget {
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
+      // Hasta aqui el tema vivo no pasaba escala tipografica, asi que toda la
+      // app corria con la de Material 3, donde un titulo pesa lo mismo que su
+      // parrafo. Es la causa de que Caja y Formatos se lean como un muro de
+      // texto. La escala es la misma que usa VetTheme, en un solo sitio.
+      textTheme: VetTheme.textTheme(brightness, scheme),
+      fontFamily: VetTheme.fontFamily,
       scaffoldBackgroundColor: neumorphic ? background : null,
       appBarTheme: neumorphic
           ? AppBarTheme(
@@ -286,15 +396,47 @@ class VetDosisApp extends StatelessWidget {
               style: neuButtonStyle(dark, base: scheme.primary),
             )
           : null,
+      // Dos ramas llegaron aqui con una idea cada una y se quedan las dos
+      // mitades buenas.
+      //
+      // El relieve es el degradado (ver neuButtonStyle): la otra rama uso la
+      // elevacion de Material y su propio comentario lo admitia, «un
+      // neumorfismo a media voz», porque de ButtonStyle solo sale la sombra
+      // de abajo, no el brillo de arriba.
+      //
+      // La LINEA es de ella y se conserva: en reposo no hay ninguna, pero
+      // aparece al elegir, pulsar o enfocar. Sin eso, un boton sin borde y
+      // sin sombra exterior no acusa el foco, que es como se navega con
+      // teclado o con mando.
       outlinedButtonTheme: neumorphic
           ? OutlinedButtonThemeData(
               style: neuButtonStyle(dark, base: neuRaised(dark, surface))
                   .copyWith(
-                    side: const WidgetStatePropertyAll(BorderSide.none),
+                    side: WidgetStateProperty.resolveWith(_neuSide(primary)),
                     backgroundColor: WidgetStatePropertyAll(
                       neuRaised(dark, surface),
                     ),
                   ),
+            )
+          : null,
+      // Los botones de linea y los chips llevaban un borde gris fijo que los
+      // dejaba planos y con el contorno mas oscuro que su propio contenido:
+      // la linea pesaba mas que la palabra. La regla pasa a ser la misma
+      // para los tres controles de seleccion —linea solo cuando esta
+      // elegido, y del primario— y en reposo se levantan en relieve en vez
+      // de dibujarse con borde.
+      //
+      // El relieve que se puede pedir desde ButtonStyle es la sombra de
+      // abajo, no el brillo de arriba: un neumorfismo a media voz. El
+      // completo necesita pintar las dos sombras, que es lo que hace
+      // NeuInputBorder en los campos y queda pendiente para estos.
+      segmentedButtonTheme: neumorphic
+          ? SegmentedButtonThemeData(
+              style: ButtonStyle(
+                side: WidgetStateProperty.resolveWith(_neuSide(primary)),
+                shadowColor: WidgetStatePropertyAll(_neuShadow(dark)),
+                elevation: WidgetStateProperty.resolveWith(_neuElevation),
+              ),
             )
           : null,
       chipTheme: neumorphic
@@ -302,9 +444,12 @@ class VetDosisApp extends StatelessWidget {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
-              side: BorderSide(
-                color: dark ? VetColors.darkOutline : const Color(0xFFDDE7EF),
-              ),
+              side: WidgetStateBorderSide.resolveWith(_neuSide(primary)),
+              backgroundColor: surface,
+              selectedColor: primary.withValues(alpha: dark ? .22 : .15),
+              shadowColor: _neuShadow(dark),
+              elevation: 2,
+              pressElevation: 1,
             )
           : null,
       navigationBarTheme: neumorphic
@@ -322,12 +467,16 @@ class VetDosisApp extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => ListenableBuilder(
+  Widget build(BuildContext context) => SessionRouteGuard(
+    auth: auth,
+    builder: (context, navigatorKey) => ListenableBuilder(
     listenable: Listenable.merge([model, ?auth]),
+    // Keep MaterialApp (and its Navigator/Element tree) stable across
+    // auth and clinic updates. Re-keying it here disposed and recreated the
+    // whole app subtree during ListenableBuilder notifications, which could
+    // invalidate inherited dependencies while Flutter was rebuilding.
     builder: (context, _) => MaterialApp(
-      key: ValueKey(
-        '${auth?.active?.userId}:${auth?.active?.clinicId}:${auth?.active?.role.name}:${auth?.signedIn}',
-      ),
+      navigatorKey: navigatorKey,
       title: 'VetDosis Pro',
       locale: const Locale('es', 'MX'),
       supportedLocales: const [Locale('es', 'MX')],
@@ -351,6 +500,7 @@ class VetDosisApp extends StatelessWidget {
             )
           : shell(context),
     ),
+  ),
   );
 
   Widget shell(BuildContext context) =>

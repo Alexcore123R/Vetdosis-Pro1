@@ -90,21 +90,26 @@ import '../modules/auth/presentation/auth_screen.dart';
 
 /// Los cinco temas del selector de Ajustes, con nombre y semilla.
 ///
-/// El indice 0 es el morado de la marca, que es el tema por omision: lo
-/// decidio 54bddae al pasar el primario de verde esmeralda a morado, y se
-/// respeta aqui. Los otros cuatro eran colores de catalogo (oceano, indigo,
-/// ambar, obsidiana) ajenos a la familia, asi que al elegir uno la app dejaba
-/// de parecerse a si misma; pasan a [VetColors]. El verdeazulado que el neu
-/// llevaba fijado a mano no se pierde: queda como «Turquesa».
+/// El indice 0 es el verdeazulado, que es el tema por omision: Ale lo pidio
+/// asi el 11 de noviembre, viendo el morado ya aplicado.
+///
+/// Conviene saber que esto revierte lo VISIBLE de 54bddae, que habia pasado
+/// el primario de verde a morado y esta fusionado en main. No se revierte el
+/// commit: el morado no se pierde, baja a ser el segundo tono y se puede
+/// elegir en Ajustes. Lo que cambia es cual sale sin tocar nada.
+///
+/// Los otros cuatro eran colores de catalogo (oceano, indigo, ambar,
+/// obsidiana) ajenos a la familia, asi que al elegir uno la app dejaba de
+/// parecerse a si misma; pasan a [VetColors].
 ///
 /// Son SEMILLAS, no colores finales. Material 3 deriva de cada una un
 /// `primary` y un `onPrimary` que contrastan entre si, que es lo que exige
 /// `platform_review_test` a las cinco paletas en los dos brillos. Por eso ya
 /// no hace falta elegir a mano un morado claro para oscuro y otro para claro.
-const paletteNames = ['Amatista', 'Turquesa', 'Cielo', 'Lila', 'Menta'];
+const paletteNames = ['Turquesa', 'Amatista', 'Cielo', 'Lila', 'Menta'];
 const paletteColors = [
-  VetColors.purple,
   Color(0xFF087F83),
+  VetColors.purple,
   VetColors.brandSky,
   VetColors.brandLilac,
   VetColors.mint,

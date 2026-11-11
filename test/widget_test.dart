@@ -33,8 +33,8 @@ void main() {
     final antes = Theme.of(
       tester.element(find.byType(Scaffold).first),
     ).colorScheme.primary;
-    await tester.ensureVisible(find.text('Turquesa'));
-    await tester.tap(find.text('Turquesa'));
+    await tester.ensureVisible(find.text('Amatista'));
+    await tester.tap(find.text('Amatista'));
     await tester.pumpAndSettle();
     expect((await repository.load()).palette, 1);
     expect(

@@ -341,10 +341,20 @@ class VetDosisApp extends StatelessWidget {
             )
           : null,
       cardTheme: neumorphic
+          // Las tarjetas de Material quedaban del color exacto del lienzo
+          // y sin sombra, o sea invisibles: en Hospitalizacion, Vademecum
+          // y otras setenta llamadas el contenido flotaba sin caja. Pasan a
+          // placa levantada: un punto mas clara que el fondo y con sombra
+          // suave. De CardTheme solo sale la sombra de abajo; el par
+          // completo sigue siendo cosa de VetCard y WorkspacePanel.
           ? CardThemeData(
-              color: background,
+              color: neuRaised(dark, background),
               surfaceTintColor: Colors.transparent,
-              elevation: 0,
+              elevation: 3,
+              shadowColor: dark
+                  ? const Color(0x99000000)
+                  : const Color(0x73A9B0C4),
+              margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(22),
               ),
@@ -393,7 +403,15 @@ class VetDosisApp extends StatelessWidget {
       // jerarquia y levantarlo lo igualaria con los otros dos.
       filledButtonTheme: neumorphic
           ? FilledButtonThemeData(
-              style: neuButtonStyle(dark, base: scheme.primary),
+              // El principal lleva el recorrido aqua → violeta de las
+              // referencias; el tono elegido en Ajustes sigue mandando en
+              // seleccion, foco, enlaces e iconos.
+              style: neuButtonStyle(
+                dark,
+                base: scheme.primary,
+                gradient: neuActionGradient(dark),
+                ink: neuActionInk(dark),
+              ),
             )
           : null,
       // Dos ramas llegaron aqui con una idea cada una y se quedan las dos
@@ -453,10 +471,51 @@ class VetDosisApp extends StatelessWidget {
             )
           : null,
       navigationBarTheme: neumorphic
+          // La pestana activa es una placa clara redondeada con su
+          // etiqueta en el color primario, no la pildora de Material.
           ? NavigationBarThemeData(
               backgroundColor: surface,
-              indicatorColor: primary.withValues(alpha: dark ? 0.22 : 0.18),
+              indicatorColor: neuRaised(dark, surface),
+              indicatorShape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
               elevation: 0,
+            )
+          : null,
+      // Calendario: el dia elegido es una pastilla con el color primario
+      // y el de hoy lleva solo el trazo, como en la maqueta de Agenda.
+      datePickerTheme: neumorphic
+          ? DatePickerThemeData(
+              backgroundColor: surface,
+              surfaceTintColor: Colors.transparent,
+              dayShape: WidgetStatePropertyAll(
+                RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              dayBackgroundColor: WidgetStateProperty.resolveWith(
+                (states) => states.contains(WidgetState.selected)
+                    ? neuActionGradient(dark).first
+                    : null,
+              ),
+              dayForegroundColor: WidgetStateProperty.resolveWith(
+                (states) => states.contains(WidgetState.selected)
+                    ? neuActionInk(dark)
+                    : states.contains(WidgetState.disabled)
+                    ? scheme.onSurface.withValues(alpha: .38)
+                    : scheme.onSurface,
+              ),
+              todayBackgroundColor: WidgetStateProperty.resolveWith(
+                (states) => states.contains(WidgetState.selected)
+                    ? neuActionGradient(dark).first
+                    : Colors.transparent,
+              ),
+              todayForegroundColor: WidgetStateProperty.resolveWith(
+                (states) => states.contains(WidgetState.selected)
+                    ? neuActionInk(dark)
+                    : primary,
+              ),
+              todayBorder: BorderSide(color: primary),
             )
           : null,
       extensions: [
@@ -748,6 +807,13 @@ class CoreShell extends StatelessWidget {
           identityBuilder: (_) => Column(
             children: [
               if (auth!.repository.userId != null)
+                ProfileHeader(
+                  userId: auth!.repository.userId!,
+                  repository: identity,
+                  title: auth!.active?.clinicName,
+                  subtitle: auth!.active?.role.label,
+                ),
+              if (auth!.repository.userId != null)
                 ProfileAppearance(
                   key: ValueKey(auth!.repository.userId),
                   userId: auth!.repository.userId!,
@@ -849,6 +915,30 @@ class CoreShell extends StatelessWidget {
   int get barActions =>
       (showsAccountAction ? 1 : 0) + (showsNoticesAction ? 1 : 0);
 
+  static bool _neu(BuildContext context) =>
+      Theme.of(context).extension<WorkspaceStyle>()?.neumorphic == true;
+
+  /// La hoja del contenido: en Neu sube con esquinas redondeadas sobre la
+  /// banda de marca que continua la de la barra.
+  Widget _sheet(BuildContext context, Widget child) {
+    if (!_neu(context)) return child;
+    final theme = Theme.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(gradient: screenHeaderGradient(theme)),
+      // Material y no Container: los ListTile de dentro pintan su fondo y
+      // sus ondas sobre el Material mas cercano, y un color intermedio se
+      // los taparia.
+      child: Material(
+        color: theme.scaffoldBackgroundColor,
+        clipBehavior: Clip.antiAlias,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: child,
+      ),
+    );
+  }
+
   Widget _buildShell(BuildContext context) => PopScope(
     canPop: model.screen == 'Inicio',
     onPopInvokedWithResult: (didPop, result) {
@@ -856,6 +946,18 @@ class CoreShell extends StatelessWidget {
     },
     child: Scaffold(
       appBar: AppBar(
+        // En Neu la barra lleva la banda de marca y la hoja del contenido
+        // sube sobre ella; en Clasico se queda con el color del tema.
+        backgroundColor: _neu(context) ? Colors.transparent : null,
+        scrolledUnderElevation: _neu(context) ? 0 : null,
+        flexibleSpace: _neu(context)
+            ? DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: screenHeaderGradient(Theme.of(context)),
+                ),
+                child: const SizedBox.expand(),
+              )
+            : null,
         // El alto se calcula con la misma regla que usa ScreenTitle para
         // decidir si el nombre cabe en una linea o necesita dos. Si no, un
         // titulo de dos lineas se recorta contra una barra pensada para una.
@@ -934,7 +1036,23 @@ class CoreShell extends StatelessWidget {
             IconButton(
               tooltip: 'Anuncios y avisos',
               onPressed: () => model.navigate('Anuncios y avisos'),
-              icon: BrandGradientIcon(Icons.notifications_none),
+              // Sobre la banda el degradado del icono se perderia: en Neu
+              // va dentro de una placa del color del lienzo, como los
+              // botones de cabecera de las referencias.
+              icon: _neu(context)
+                  ? Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: neuShadows(
+                          Theme.of(context).brightness == Brightness.dark,
+                          depth: .5,
+                        ),
+                      ),
+                      child: BrandGradientIcon(Icons.notifications_none),
+                    )
+                  : BrandGradientIcon(Icons.notifications_none),
             ),
         ],
       ),
@@ -942,11 +1060,28 @@ class CoreShell extends StatelessWidget {
         child: SafeArea(
           child: ListView(
             children: [
-              const ListTile(
-                title: Text('VetDosis Pro'),
-                subtitle: Text('Tu espacio veterinario'),
-              ),
-              const Divider(),
+              // En Neu el cajon abre con la misma banda de marca que la
+              // barra, con el logotipo dentro; en Clasico sigue el renglon.
+              if (_neu(context))
+                Container(
+                  margin: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    gradient: screenHeaderGradient(Theme.of(context)),
+                  ),
+                  child: const Align(
+                    alignment: Alignment.centerLeft,
+                    child: VetDosisBrand(),
+                  ),
+                )
+              else ...[
+                const ListTile(
+                  title: Text('VetDosis Pro'),
+                  subtitle: Text('Tu espacio veterinario'),
+                ),
+                const Divider(),
+              ],
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Text('Área de trabajo'),
@@ -1027,7 +1162,9 @@ class CoreShell extends StatelessWidget {
               ),
             )
           : null,
-      body: SafeArea(
+      body: _sheet(
+        context,
+        SafeArea(
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 1100),
@@ -1429,6 +1566,11 @@ class CoreShell extends StatelessWidget {
                       ? QuickScanScreen(
                           repository: inventory!,
                           member: auth!.active!,
+                          onOpenLabelScanner: allowed('Cálculo rápido')
+                              ? () => model.navigate(
+                                  'Escanear etiqueta para dosis',
+                                )
+                              : null,
                         )
                       : const Text(
                           'Conecta tu cuenta y verifica el acceso a inventario para escanear productos.',
@@ -1700,6 +1842,7 @@ class CoreShell extends StatelessWidget {
               ],
             ),
           ),
+        ),
         ),
       ),
     ),

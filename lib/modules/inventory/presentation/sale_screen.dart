@@ -1,3 +1,6 @@
+import '../../../core/widgets/neu_pos.dart';
+import '../../../vet_ui/vet_components.dart';
+import '../../../vet_ui/vet_theme.dart';
 import 'dart:convert';
 import '../../auth/domain/clinic_membership.dart';
 import '../../core/domain/plan_errors.dart';
@@ -205,6 +208,25 @@ class _SaleScreenState extends State<SaleScreen> {
   bool creditOutcomeUncertain = false;
   final initialAmount = TextEditingController(text: '0');
   final debtor = TextEditingController();
+
+  /// Efectivo que entrega el cliente. Solo alimenta el calculo del cambio.
+  final received = TextEditingController();
+
+  /// El cambio a entregar, o cuanto falta, segun lo tecleado.
+  String get changeLabel {
+    if (received.text.isEmpty) return 'Teclea lo que entrega el cliente.';
+    try {
+      final typed = received.text.endsWith('.')
+          ? received.text.substring(0, received.text.length - 1)
+          : received.text;
+      final difference = Money.parse(typed) - total;
+      return difference.cents.isNegative
+          ? 'Faltan ${Money(-difference.cents).display}'
+          : 'Cambio: ${difference.display}';
+    } on FormatException {
+      return 'Importe no válido.';
+    }
+  }
   String? creditRetryKey, creditOperation;
   List<Map<String, dynamic>>? creditRetryLines;
   String? creditRetryMethod, creditRetryInitialAmount, creditRetryDebtor;
@@ -212,6 +234,7 @@ class _SaleScreenState extends State<SaleScreen> {
   @override
   void dispose() {
     initialAmount.dispose();
+    received.dispose();
     debtor.dispose();
     super.dispose();
   }
@@ -1002,13 +1025,24 @@ class _SaleScreenState extends State<SaleScreen> {
                 icon: const Icon(Icons.delete_outline),
               ),
             ),
-          Text(
-            'Total a pagar: ${total.display}',
-            style: Theme.of(context).textTheme.titleLarge,
+          const SizedBox(height: 12),
+          VetCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Total a pagar: ${total.display}',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Las comisiones son internas; no se suman al total del cliente.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
           ),
-          const Text(
-            'Las comisiones son internas; no se suman al total del cliente.',
-          ),
+          const SizedBox(height: 16),
           if (widget.creditSupported && widget.actor != null) ...[
             SwitchListTile(
               value: credit,
@@ -1049,24 +1083,75 @@ class _SaleScreenState extends State<SaleScreen> {
               ),
             ],
           ],
-          DropdownButtonFormField<String>(
-            initialValue: method,
-            decoration: const InputDecoration(labelText: 'Método de pago'),
-            items: [
-              for (final m in ['efectivo', 'tarjeta', 'transferencia'])
-                DropdownMenuItem(value: m, child: Text(m)),
+          // El metodo de pago pasa de lista desplegable a tres mosaicos,
+          // como en la maqueta de Caja: se ve cual esta elegido sin abrir
+          // nada. Los valores que viajan al servidor son los mismos.
+          const VetSectionHeader(title: 'Método de pago'),
+          NeuStatRow(
+            children: [
+              for (final option in const [
+                ('efectivo', 'Efectivo', Icons.local_atm, VetColors.turquoise),
+                ('tarjeta', 'Tarjeta', Icons.credit_card, VetColors.brandSky),
+                (
+                  'transferencia',
+                  'Transferencia',
+                  Icons.swap_horiz,
+                  VetColors.lilac,
+                ),
+              ])
+                NeuStatTile(
+                  key: ValueKey('metodo-${option.$1}'),
+                  icon: option.$3,
+                  color: option.$4,
+                  label: option.$2,
+                  selected: method == option.$1,
+                  onTap: busy
+                      ? null
+                      : () => setState(() {
+                          if (method == option.$1) return;
+                          method = option.$1;
+                          changed();
+                        }),
+                ),
             ],
-            onChanged: busy
-                ? null
-                : (m) {
-                    if (m != null) {
-                      setState(() {
-                        method = m;
-                        changed();
-                      });
-                    }
-                  },
           ),
+          // Ayuda de mostrador, no un dato de la venta: lo que entrega el
+          // cliente y el cambio que le toca. No se envia al servidor ni
+          // cambia el total; solo evita hacer la resta de memoria.
+          if (method == 'efectivo' && !credit && lines.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            VetCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Efectivo recibido',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  Text(
+                    received.text.isEmpty ? 'MXN 0' : 'MXN ${received.text}',
+                    key: const ValueKey('efectivo-recibido'),
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                  Text(
+                    changeLabel,
+                    key: const ValueKey('cambio'),
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const Text(
+                    'Solo para calcular el cambio; no se guarda en la venta.',
+                  ),
+                  const SizedBox(height: 8),
+                  NeuKeypad(
+                    controller: received,
+                    enabled: !busy,
+                    onChanged: () => setState(() {}),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
           CheckboxListTile(
             value: reviewed,
             title: const Text(

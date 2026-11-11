@@ -1,6 +1,9 @@
 import 'credit_accounts_screen.dart';
 import 'partial_return_screen.dart';
 import '../../../core/widgets/neu_record_card.dart';
+import '../../../core/widgets/neu_pos.dart';
+import '../../../vet_ui/vet_components.dart';
+import '../../../vet_ui/vet_theme.dart';
 import '../../identity/domain/identity_repository.dart';
 import '../../ai/domain/ai_repository.dart';
 import 'inventory_insights_screen.dart';
@@ -881,6 +884,17 @@ class _InventoryScreenState extends State<InventoryScreen> {
     }
   }
 
+  /// Un importe del resumen del dia, o una raya si el servidor no lo trae.
+  String dayAmount(String key) {
+    final value = (model.dashboard?['day_totals'] as Map?)?[key];
+    if (value is! String) return '—';
+    try {
+      return Money.parse(value, signed: true).display;
+    } catch (_) {
+      return '—';
+    }
+  }
+
   Widget totals(Map<String, dynamic> t) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
@@ -1200,41 +1214,116 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 ),
             ],
             if (section == 'cash') ...[
-              if (model.dashboard?['credit_supported'] == true &&
-                  model.canCollect &&
-                  model.canReadFinance &&
-                  model.ownShift != null)
-                TextButton(
-                  onPressed: creditAccounts,
-                  child: const Text('Cuentas y abonos'),
+              // Caja segun la maqueta de Ale: el resumen del dia y los
+              // medios de pago como mosaicos, la venta nueva en el boton
+              // redondo y lo demas en acciones secundarias. Los importes son
+              // los mismos que ya entregaba el servidor en day_totals; solo
+              // cambia como se presentan.
+              if (model.canReadFinance &&
+                  model.dashboard!['day_totals'] != null) ...[
+                const VetSectionHeader(
+                  title: 'Resumen del día',
+                  subtitle: 'Todas las cajas de la clínica',
                 ),
-              if (model.ownShift == null && model.canCollect)
-                FilledButton(
-                  onPressed: openShift,
-                  child: const Text('Abrir mi turno'),
-                ),
-              if (model.ownShift != null)
-                Wrap(
-                  spacing: 8,
+                NeuStatRow(
                   children: [
-                    FilledButton(
-                      onPressed: model.canCollect ? sale : null,
-                      child: const Text('Nueva venta'),
+                    NeuStatTile(
+                      icon: Icons.payments_outlined,
+                      color: VetColors.turquoise,
+                      label: 'Ventas netas',
+                      value: dayAmount('gross'),
                     ),
-                    TextButton(
-                      onPressed: model.canMoveCash ? cashMove : null,
-                      child: const Text('Ingreso / retiro / gasto'),
+                    NeuStatTile(
+                      icon: Icons.receipt_long_outlined,
+                      color: VetColors.pink,
+                      label: 'Gastos en efectivo',
+                      value: dayAmount('expense'),
                     ),
-                    TextButton(
-                      onPressed: () => cut(model.ownShift!['id']),
-                      child: const Text('Revisar corte actual'),
-                    ),
-                    TextButton(
-                      onPressed: model.canCollect ? closeShift : null,
-                      child: const Text('Contar y cerrar turno'),
+                    NeuStatTile(
+                      icon: Icons.account_balance_wallet_outlined,
+                      color: VetColors.violet,
+                      label: 'Resultado capturado',
+                      value: dayAmount('recorded_net'),
                     ),
                   ],
                 ),
+                const SizedBox(height: 20),
+                const VetSectionHeader(
+                  title: 'Métodos de pago',
+                  subtitle: 'Pagos recibidos menos reembolsos',
+                ),
+                NeuStatRow(
+                  children: [
+                    NeuStatTile(
+                      icon: Icons.local_atm,
+                      color: VetColors.turquoise,
+                      label: 'Efectivo',
+                      value: dayAmount('cash'),
+                    ),
+                    NeuStatTile(
+                      icon: Icons.credit_card,
+                      color: VetColors.brandSky,
+                      label: 'Tarjeta',
+                      value: dayAmount('card'),
+                    ),
+                    NeuStatTile(
+                      icon: Icons.swap_horiz,
+                      color: VetColors.lilac,
+                      label: 'Transferencia',
+                      value: dayAmount('transfer'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+              ],
+              const VetSectionHeader(title: 'Transacción'),
+              if (model.ownShift == null) ...[
+                const Text(
+                  'Tu caja está cerrada. Abre tu turno para registrar ventas.',
+                ),
+                const SizedBox(height: 12),
+                if (model.canCollect)
+                  FilledButton(
+                    onPressed: openShift,
+                    child: const Text('Abrir mi turno'),
+                  ),
+              ],
+              if (model.ownShift != null) ...[
+                const SizedBox(height: 8),
+                Center(
+                  child: NeuRoundAction(
+                    label: 'Nueva venta',
+                    onPressed: model.canCollect ? sale : null,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    OutlinedButton(
+                      onPressed: model.canMoveCash ? cashMove : null,
+                      child: const Text('Ingreso / retiro / gasto'),
+                    ),
+                    OutlinedButton(
+                      onPressed: () => cut(model.ownShift!['id']),
+                      child: const Text('Revisar corte actual'),
+                    ),
+                    OutlinedButton(
+                      onPressed: model.canCollect ? closeShift : null,
+                      child: const Text('Contar y cerrar turno'),
+                    ),
+                    if (model.dashboard?['credit_supported'] == true &&
+                        model.canCollect &&
+                        model.canReadFinance)
+                      OutlinedButton(
+                        onPressed: creditAccounts,
+                        child: const Text('Cuentas y abonos'),
+                      ),
+                  ],
+                ),
+              ],
               if (model.canReadFinance)
                 TextButton.icon(
                   onPressed: invoiceRequests,
@@ -1242,12 +1331,24 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   label: const Text('Solicitudes de factura'),
                 ),
               if (model.canReadFinance &&
-                  model.dashboard!['day_totals'] != null) ...[
-                const Text('Resumen del día · todas las cajas de la clínica'),
-                totals(
-                  Map<String, dynamic>.from(model.dashboard!['day_totals']),
+                  model.dashboard!['day_totals'] != null)
+                // El desglose completo sigue disponible, plegado: arriba ya
+                // estan las cifras que se consultan a diario.
+                ExpansionTile(
+                  title: const Text('Desglose del día'),
+                  subtitle: const Text(
+                    'Resumen del día · todas las cajas de la clínica',
+                  ),
+                  childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  expandedCrossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    totals(
+                      Map<String, dynamic>.from(
+                        model.dashboard!['day_totals'],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
               for (final sh in model.rows('shifts'))
                 ListTile(
                   title: Text(

@@ -114,6 +114,17 @@ Future<void> tapVisible(WidgetTester tester, Finder finder) async {
   // A focused TextField can keep scheduling caret frames, so don't wait for
   // full settling before tapping the next control.
   await tester.pump();
+  // Tras escribir en un campo, el framework desplaza la lista unos pixeles
+  // para dejar el cursor a la vista, y mientras dura ese desplazamiento el
+  // contenido no recibe toques. Con la pantalla de venta mas alta el campo
+  // queda al borde y ese desplazamiento ya no es nulo (medido: 614 -> 610 en
+  // ~200 ms). Se espera a que el destino reciba toques de verdad en vez de
+  // tocar a ciegas; el toque y lo que se comprueba despues no cambian.
+  for (var i = 0; i < 20 && finder.hitTestable().evaluate().isEmpty; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.ensureVisible(finder);
+    await tester.pump();
+  }
   await tester.tap(finder);
   await tester.pumpAndSettle();
 }

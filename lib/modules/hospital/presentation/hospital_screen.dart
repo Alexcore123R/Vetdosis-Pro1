@@ -1,4 +1,6 @@
 import '../../../core/widgets/accent_glow.dart';
+import '../../../core/widgets/neu_header_card.dart';
+import '../../../core/widgets/workspace_panel.dart';
 import '../domain/hospital_history.dart';
 import 'hospital_history_screen.dart';
 import '../../patients/domain/patient_contacts.dart';
@@ -906,17 +908,24 @@ class _HospitalScreenState extends State<HospitalScreen> {
             )
           else
             for (final stay in visibleStays)
-              Card(
+              // Cada paciente internado abre con su franja de cabecera, como
+              // las tarjetas de «Hospitalizacion» de las referencias: jaula
+              // y nombre arriba, y debajo lo que ya se mostraba.
+              NeuHeaderCard(
+                title: 'Jaula ${stay.cageLabel} · ${stay.patientName}',
+                icon: Icons.pets,
+                color: sectionAccent('Hospitalización'),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'Jaula ${stay.cageLabel} · ${stay.patientName}',
-                        style: Theme.of(context).textTheme.titleLarge,
+                        stay.species,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
-                      Text(stay.species),
                       for (final isolation in model.snapshot.isolations.where(
                         (i) => i.stayId == stay.id && i.active,
                       ))

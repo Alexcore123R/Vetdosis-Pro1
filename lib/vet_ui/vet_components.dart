@@ -122,6 +122,7 @@ class VetActionButton extends StatelessWidget {
         onPressed: loading ? null : onPressed,
         style: FilledButton.styleFrom(
           backgroundColor: background,
+          backgroundBuilder: plainButtonLayer,
           elevation: 0,
           shadowColor: Colors.transparent,
           foregroundColor: foreground,
@@ -472,6 +473,40 @@ class VetSectionHeader extends StatelessWidget {
       ),
       _ => null,
     };
+    // Un paso numerado en Neu es una tarjeta, como en las referencias de
+    // Ale: el cuadro y el titulo arriba, y la explicacion debajo a todo el
+    // ancho en vez de apretada junto al cuadro. Los bloques sin numero
+    // siguen siendo un titulo suelto.
+    if (step != null &&
+        box != null &&
+        theme.extension<WorkspaceStyle>()?.neumorphic == true) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: VetCard(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  box,
+                  const SizedBox(width: 14),
+                  Expanded(child: Text(title, style: textTheme.titleLarge)),
+                ],
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  subtitle!,
+                  style: textTheme.bodyMedium?.copyWith(color: supportColor),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: box == null

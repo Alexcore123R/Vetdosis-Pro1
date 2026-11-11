@@ -29,6 +29,31 @@ List<BoxShadow> neuShadows(bool dark, {double depth = 1}) => [
   ),
 ];
 
+/// Recorrido del boton principal en Neu: el aqua → violeta de «Ingresar» y
+/// «Calcular» en las referencias de Ale.
+///
+/// En claro va mas cargado que el degradado de marca porque encima lleva la
+/// etiqueta en blanco: con los tonos palidos de [brandGradientColors] el
+/// texto se quedaba en 1.5:1. Medido contra blanco: 4.0:1 en el extremo aqua
+/// y 4.6:1 en el violeta. En oscuro se usan los tonos de marca tal cual y la
+/// tinta pasa a ser oscura.
+List<Color> neuActionGradient(bool dark) => dark
+    ? const [Color(0xFF60E5E2), Color(0xFF8FA8EC), Color(0xFFAF84F0)]
+    : const [Color(0xFF0E8C8A), Color(0xFF3F78C4), Color(0xFF6C63E6)];
+
+/// Tinta de la etiqueta sobre [neuActionGradient].
+Color neuActionInk(bool dark) => dark ? const Color(0xFF10131F) : Colors.white;
+
+/// Deja el fondo que el propio boton ya trae.
+///
+/// Para los botones que pintan su color a mano (peligro, neutro, los de las
+/// calculadoras): sin esto heredarian el degradado del tema encima del suyo.
+Widget plainButtonLayer(
+  BuildContext context,
+  Set<WidgetState> states,
+  Widget? child,
+) => child ?? const SizedBox.shrink();
+
 /// Paints shallow inner light/shade without changing field layout or hit targets.
 class NeuInputBorder extends OutlineInputBorder {
   const NeuInputBorder({
@@ -228,6 +253,7 @@ class _NeuPrimaryButtonState extends State<NeuPrimaryButton> {
                 statesController: states,
                 style: FilledButton.styleFrom(
                   elevation: 0,
+                  backgroundBuilder: plainButtonLayer,
                   backgroundColor: Colors.transparent,
                   shadowColor: Colors.transparent,
                   foregroundColor: color.computeLuminance() > .4
@@ -270,6 +296,7 @@ class _NeuPrimaryButtonState extends State<NeuPrimaryButton> {
         child: FilledButton(
           style: FilledButton.styleFrom(
             elevation: 0,
+            backgroundBuilder: plainButtonLayer,
             backgroundColor: Colors.transparent,
             foregroundColor: neuInk,
             shadowColor: Colors.transparent,
@@ -320,7 +347,34 @@ Color neuRaised(bool dark, Color superficie) => dark
 ///
 /// Para el relieve exterior de verdad sigue estando [NeuPrimaryButton], que
 /// se envuelve a mano y por eso puede sacar la sombra fuera.
-ButtonStyle neuButtonStyle(bool dark, {required Color base}) => ButtonStyle(
+///
+/// Con [gradient] la placa lleva ese recorrido de lado a lado en vez del
+/// relieve de un solo tono: es el boton principal de las referencias de Ale
+/// («Ingresar», «Calcular»), que va de aqua a violeta. [ink] es la tinta de
+/// su etiqueta, medida contra ese recorrido.
+ButtonStyle neuButtonStyle(
+  bool dark, {
+  required Color base,
+  List<Color>? gradient,
+  Color? ink,
+}) => ButtonStyle(
+  foregroundColor: ink == null
+      ? null
+      : WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.disabled) ? null : ink,
+        ),
+  iconColor: ink == null
+      ? null
+      : WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.disabled) ? null : ink,
+        ),
+  backgroundColor: gradient == null
+      ? null
+      : WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.disabled)
+              ? null
+              : Colors.transparent,
+        ),
   elevation: const WidgetStatePropertyAll(0),
   shadowColor: const WidgetStatePropertyAll(Colors.transparent),
   shape: WidgetStatePropertyAll(
@@ -345,7 +399,17 @@ ButtonStyle neuButtonStyle(bool dark, {required Color base}) => ButtonStyle(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: pressed ? [base, lift] : [lift, base],
+          colors: gradient != null
+              ? [
+                  // Pulsado se apaga un punto en vez de invertirse: el
+                  // recorrido tiene direccion y darle la vuelta se leeria
+                  // como otro boton.
+                  for (final tono in gradient)
+                    pressed ? Color.lerp(tono, Colors.black, .12)! : tono,
+                ]
+              : pressed
+              ? [base, lift]
+              : [lift, base],
         ),
       ),
       child: child,

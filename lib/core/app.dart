@@ -1862,18 +1862,9 @@ class SoftPanel extends StatelessWidget {
         border: Border.all(
           color: dark ? VetColors.darkBorder : const Color(0xFFE4EDF3),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: dark ? const Color(0x99000000) : const Color(0xFFD5E0E7),
-            offset: const Offset(7, 8),
-            blurRadius: 18,
-          ),
-          BoxShadow(
-            color: dark ? const Color(0x182DE6D1) : const Color(0xFFFFFFFF),
-            offset: const Offset(-6, -6),
-            blurRadius: 16,
-          ),
-        ],
+        // El par del sistema. Ver la nota de clinical_vitals_screen: estos
+        // eran los valores duros de antes del relieve suave.
+        boxShadow: neuShadows(dark, depth: 1.2),
       ),
       foregroundDecoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),

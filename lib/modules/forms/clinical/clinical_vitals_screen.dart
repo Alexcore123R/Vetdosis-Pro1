@@ -1,6 +1,8 @@
 import '../../../core/widgets/accent_glow.dart';
 import '../../../vet_ui/vet_theme.dart';
 import 'package:flutter/material.dart';
+
+import '../../../core/widgets/neu_identity.dart';
 import '../../calculations/data/reference_library_repository.dart';
 import '../../calculations/presentation/reference_library_screen.dart';
 import '../../auth/domain/clinic_membership.dart';
@@ -259,18 +261,11 @@ class _ClinicalVitalsScreenState extends State<ClinicalVitalsScreen> {
             ? VetColors.darkBorder
             : const Color(0xFFE4EDF3),
       ),
-      boxShadow: [
-        BoxShadow(
-          color: dark ? const Color(0x99000000) : const Color(0xFFD6E1E8),
-          offset: const Offset(7, 8),
-          blurRadius: 18,
-        ),
-        BoxShadow(
-          color: dark ? const Color(0x162DE6D1) : Colors.white,
-          offset: const Offset(-6, -6),
-          blurRadius: 15,
-        ),
-      ],
+      // El par del sistema, no uno a mano. Estos valores (7/8 y 18 de
+      // desenfoque) son los de antes de que Ale pidiera el relieve mas suave:
+      // neuShadows se bajo entonces a 3/3 y 14 y estos dos sitios se quedaron
+      // con los duros, asi que la misma app tenia dos profundidades.
+      boxShadow: neuShadows(dark, depth: 1.2),
     );
   }
 

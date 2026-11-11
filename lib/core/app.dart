@@ -482,6 +482,42 @@ class VetDosisApp extends StatelessWidget {
               elevation: 0,
             )
           : null,
+      // Calendario: el dia elegido es una pastilla con el color primario
+      // y el de hoy lleva solo el trazo, como en la maqueta de Agenda.
+      datePickerTheme: neumorphic
+          ? DatePickerThemeData(
+              backgroundColor: surface,
+              surfaceTintColor: Colors.transparent,
+              dayShape: WidgetStatePropertyAll(
+                RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              dayBackgroundColor: WidgetStateProperty.resolveWith(
+                (states) => states.contains(WidgetState.selected)
+                    ? neuActionGradient(dark).first
+                    : null,
+              ),
+              dayForegroundColor: WidgetStateProperty.resolveWith(
+                (states) => states.contains(WidgetState.selected)
+                    ? neuActionInk(dark)
+                    : states.contains(WidgetState.disabled)
+                    ? scheme.onSurface.withValues(alpha: .38)
+                    : scheme.onSurface,
+              ),
+              todayBackgroundColor: WidgetStateProperty.resolveWith(
+                (states) => states.contains(WidgetState.selected)
+                    ? neuActionGradient(dark).first
+                    : Colors.transparent,
+              ),
+              todayForegroundColor: WidgetStateProperty.resolveWith(
+                (states) => states.contains(WidgetState.selected)
+                    ? neuActionInk(dark)
+                    : primary,
+              ),
+              todayBorder: BorderSide(color: primary),
+            )
+          : null,
       extensions: [
         WorkspaceStyle(neumorphic: neumorphic),
         AccentGlowStyle(enabled: neumorphic),
@@ -770,6 +806,13 @@ class CoreShell extends StatelessWidget {
           model: auth!,
           identityBuilder: (_) => Column(
             children: [
+              if (auth!.repository.userId != null)
+                ProfileHeader(
+                  userId: auth!.repository.userId!,
+                  repository: identity,
+                  title: auth!.active?.clinicName,
+                  subtitle: auth!.active?.role.label,
+                ),
               if (auth!.repository.userId != null)
                 ProfileAppearance(
                   key: ValueKey(auth!.repository.userId),
@@ -1523,6 +1566,11 @@ class CoreShell extends StatelessWidget {
                       ? QuickScanScreen(
                           repository: inventory!,
                           member: auth!.active!,
+                          onOpenLabelScanner: allowed('Cálculo rápido')
+                              ? () => model.navigate(
+                                  'Escanear etiqueta para dosis',
+                                )
+                              : null,
                         )
                       : const Text(
                           'Conecta tu cuenta y verifica el acceso a inventario para escanear productos.',

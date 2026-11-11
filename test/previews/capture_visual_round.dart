@@ -18,6 +18,7 @@ import 'package:vetdosis_pro/modules/core/data/settings_repository.dart';
 import 'package:vetdosis_pro/modules/core/presentation/core_view_model.dart';
 import '../support/fake_auth.dart';
 import '../forms_test.dart' show FakeForms;
+import '../inventory_test.dart' show Repo, data;
 import '../hospital_test.dart' show FakeAlarms, FakeHospital;
 import 'package:vetdosis_pro/modules/hospital/application/hospital_alerts.dart';
 import '../patients_test.dart' show FakePatients;
@@ -26,6 +27,34 @@ import 'capture_home_pilot.dart' show PreviewOperations;
 class _PreviewForms extends FakeForms {
   @override
   Future<Map<String, dynamic>> branding(String clinicId) async => {};
+}
+
+/// Caja con turno abierto y cifras ficticias, para ver el resumen del dia.
+class _PreviewInventory extends Repo {
+  @override
+  Future<dynamic> read(String command, Map<String, dynamic> args) async {
+    if (command == 'inv_shift_snapshot') return super.read(command, args);
+    return {
+      ...data(),
+      'shifts': [
+        {
+          'id': 'turno',
+          'cashier_id': 'user-a',
+          'opened_at': '2026-11-11 09:00',
+          'closed_at': null,
+          'opening_cash': '500.00',
+        },
+      ],
+      'day_totals': {
+        'gross': '1850.00',
+        'cash': '900.00',
+        'card': '650.00',
+        'transfer': '300.00',
+        'expense': '120.00',
+        'recorded_net': '1730.00',
+      },
+    };
+  }
 }
 
 const _dir = String.fromEnvironment(
@@ -121,6 +150,7 @@ void main() {
                 await SharedPreferences.getInstance(),
               ),
               forms: _PreviewForms(),
+              inventory: _PreviewInventory(),
             ),
           ),
         );
@@ -140,6 +170,7 @@ void main() {
           'Agenda',
           'Receta',
           'Caja',
+          'Escanear producto',
         ]) {
           core.navigate(page);
           await _settle(tester);
@@ -150,6 +181,19 @@ void main() {
             '${page.toLowerCase().replaceAll(' ', '-')}-$tone',
           );
         }
+        core.navigate('Agenda');
+        await _settle(tester);
+        await tester.ensureVisible(find.text('Calendario'));
+        await tester.tap(find.text('Calendario'));
+        await _settle(tester);
+        await _shot(tester, key, 'calendario-$tone');
+        core.navigate('Inicio');
+        await _settle(tester);
+        await tester.tap(find.byTooltip('Mi cuenta y clínicas'));
+        await _settle(tester);
+        await _shot(tester, key, 'perfil-$tone');
+        tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+        await _settle(tester);
         core.navigate('Inicio');
         await _settle(tester);
         tester.state<ScaffoldState>(find.byType(Scaffold).first).openDrawer();

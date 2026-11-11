@@ -36,6 +36,24 @@ Segunda tanda, mismo día:
   Capturas: [Hospitalización](hospitalizacion-claro.png) ·
   [Vademécum](vademecum-claro.png) (sin fichas en el arnés).
 
+Tercera tanda, con las maquetas de Caja, Perfil y calendario:
+
+- **Caja**: resumen del día y métodos de pago como mosaicos, «Nueva venta» en
+  el botón redondo y el resto como acciones secundarias. Los importes son los
+  de `day_totals` con su nombre real (ventas netas, gastos en efectivo,
+  resultado capturado); la maqueta decía «ingresos / egresos / saldo», que el
+  servidor no entrega con ese significado. El desglose completo queda plegado.
+- **Venta**: total en tarjeta, método de pago en tres mosaicos en vez de lista
+  desplegable, y teclado numérico para el efectivo recibido con el cambio. Es
+  ayuda de mostrador: no se guarda ni viaja al servidor (hay prueba).
+- **Escáneres**: una pantalla con los dos lectores, código de barras y
+  etiqueta para dosis, cada uno en su tarjeta.
+- **Perfil**: «Mi cuenta» abre con banda de marca, foto o icono grande, el
+  espacio activo y el rol.
+- **Calendario**: el día elegido es una pastilla de color y hoy lleva trazo.
+  Capturas: [Caja](caja-claro.png) · [Escáneres](escaneres-claro.png) ·
+  [Perfil](perfil-claro.png) · [Calendario](calendario-claro.png).
+
 Capturas con cuenta y datos ficticios: [Inicio](inicio-claro.png) ·
 [Inicio oscuro](inicio-oscuro.png) · [Cálculos clínicos](calculos-clinicos-claro.png) ·
 [Formatos](formatos-claro.png) · [Secciones](secciones-claro.png) ·
@@ -46,14 +64,17 @@ el teléfono sí.
 Reproducir:
 `flutter test test/previews/capture_visual_round.dart --dart-define=VISUAL_ROUND_DIR=review/visual-round-20261111`
 
-Validación: `flutter analyze` limpio y 816 pruebas pasan, 1 omitida (Flutter
+Validación: `flutter analyze` limpio y 818 pruebas pasan, 1 omitida (Flutter
 3.47.6). Implementado; **no** revisado por CodeRabbit, **no** integrado, **no**
 desplegado y **no** probado en teléfono.
 
 Pendiente respecto a las maquetas, porque es contenido y no solo estilo:
 
 - Laboratorio no existe en esta rama (vive en `feature/laboratorio-20261110`).
-- Perfil MVZ con foto y cédula: la cuenta actual no tiene esa pantalla.
+- Perfil: teléfono, correo, cédula y horario de la maqueta no se pintan
+  porque la pantalla de cuenta no recibe esos datos.
+- Gráficas de dona y objetivos de «Resumen»: no hay metas en el servidor.
+- Pago por QR: no existe ese cobro en la app.
 - Constantes (FC, FR, temperatura) y barra de avance del tratamiento en la
   tarjeta de Hospitalización: la hoja no trae esos datos resumidos.
 - Categorías terapéuticas del Vademécum (antibióticos, analgésicos…): las

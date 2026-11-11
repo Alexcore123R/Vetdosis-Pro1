@@ -341,10 +341,20 @@ class VetDosisApp extends StatelessWidget {
             )
           : null,
       cardTheme: neumorphic
+          // Las tarjetas de Material quedaban del color exacto del lienzo
+          // y sin sombra, o sea invisibles: en Hospitalizacion, Vademecum
+          // y otras setenta llamadas el contenido flotaba sin caja. Pasan a
+          // placa levantada: un punto mas clara que el fondo y con sombra
+          // suave. De CardTheme solo sale la sombra de abajo; el par
+          // completo sigue siendo cosa de VetCard y WorkspacePanel.
           ? CardThemeData(
-              color: background,
+              color: neuRaised(dark, background),
               surfaceTintColor: Colors.transparent,
-              elevation: 0,
+              elevation: 3,
+              shadowColor: dark
+                  ? const Color(0x99000000)
+                  : const Color(0x73A9B0C4),
+              margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(22),
               ),

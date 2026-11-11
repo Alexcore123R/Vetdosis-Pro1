@@ -18,7 +18,8 @@ import 'package:vetdosis_pro/modules/core/data/settings_repository.dart';
 import 'package:vetdosis_pro/modules/core/presentation/core_view_model.dart';
 import '../support/fake_auth.dart';
 import '../forms_test.dart' show FakeForms;
-import '../hospital_test.dart' show FakeHospital;
+import '../hospital_test.dart' show FakeAlarms, FakeHospital;
+import 'package:vetdosis_pro/modules/hospital/application/hospital_alerts.dart';
 import '../patients_test.dart' show FakePatients;
 import 'capture_home_pilot.dart' show PreviewOperations;
 
@@ -115,6 +116,10 @@ void main() {
               operations: PreviewOperations(false),
               patients: FakePatients(),
               hospital: FakeHospital(),
+              hospitalAlerts: HospitalAlerts(
+                FakeAlarms(),
+                await SharedPreferences.getInstance(),
+              ),
               forms: _PreviewForms(),
             ),
           ),
@@ -131,6 +136,10 @@ void main() {
           'Hospitalización',
           'Inventario',
           'Ajustes',
+          'Vademécum',
+          'Agenda',
+          'Receta',
+          'Caja',
         ]) {
           core.navigate(page);
           await _settle(tester);

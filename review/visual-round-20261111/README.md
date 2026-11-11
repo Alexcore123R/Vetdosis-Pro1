@@ -24,6 +24,18 @@ y la estructura de las calculadoras no se tocan.
 - **Pasos numerados** (Formatos y los demás que usan `VetSectionHeader` con
   `step`): pasan a tarjeta con el cuadro y el título arriba.
 
+Segunda tanda, mismo día:
+
+- **Tarjetas de Material** (`Card`, unas setenta llamadas): en Neu eran del
+  color exacto del lienzo y sin sombra. Pasan a placa levantada, un punto más
+  clara y con sombra suave.
+- **Hospitalización**: cada paciente internado abre con franja de cabecera
+  (jaula y nombre) como el resto de apartados. El contenido es el mismo.
+- **Vademécum**: el filtro de fichas pasa de lista desplegable a pastillas, y
+  cada ficha lleva barra de color según su origen (app, clínica o personal).
+  Capturas: [Hospitalización](hospitalizacion-claro.png) ·
+  [Vademécum](vademecum-claro.png) (sin fichas en el arnés).
+
 Capturas con cuenta y datos ficticios: [Inicio](inicio-claro.png) ·
 [Inicio oscuro](inicio-oscuro.png) · [Cálculos clínicos](calculos-clinicos-claro.png) ·
 [Formatos](formatos-claro.png) · [Secciones](secciones-claro.png) ·
@@ -38,10 +50,14 @@ Validación: `flutter analyze` limpio y 816 pruebas pasan, 1 omitida (Flutter
 3.47.6). Implementado; **no** revisado por CodeRabbit, **no** integrado, **no**
 desplegado y **no** probado en teléfono.
 
-Pendiente respecto a las maquetas: Laboratorio, Perfil MVZ, Hospitalización con
-constantes y Vademécum rápido son pantallas con contenido propio, no solo
-estilo; heredan la cabecera, tarjetas y botones nuevos pero su maquetación no
-se rehízo en esta ronda.
+Pendiente respecto a las maquetas, porque es contenido y no solo estilo:
+
+- Laboratorio no existe en esta rama (vive en `feature/laboratorio-20261110`).
+- Perfil MVZ con foto y cédula: la cuenta actual no tiene esa pantalla.
+- Constantes (FC, FR, temperatura) y barra de avance del tratamiento en la
+  tarjeta de Hospitalización: la hoja no trae esos datos resumidos.
+- Categorías terapéuticas del Vademécum (antibióticos, analgésicos…): las
+  fichas no llevan categoría; las pastillas filtran por origen.
 
 Tablón: el issue #31 vive en otro repositorio, fuera del alcance de la sesión
 que hizo este trabajo. Esta nota queda como registro local; nadie fue

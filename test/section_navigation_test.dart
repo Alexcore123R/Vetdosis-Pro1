@@ -58,9 +58,11 @@ void main() {
       final theme = Theme.of(tester.element(drawer));
       expect(theme.drawerTheme.backgroundColor, theme.colorScheme.surface);
       // El primary sale de la semilla del tema elegido en Ajustes, no de una
-      // constante. Antes esta linea fijaba #087F83, que era el color que el
-      // neu llevaba puesto a mano, y por eso no se enteraba de que el selector
-      // de tema no hacia nada: daba igual el tono elegido, siempre salia ese.
+      // constante. Esta linea fijo primero #087F83 y luego VetColors.purple:
+      // las dos veces el color que el neu llevaba puesto a mano. Por eso no se
+      // entero de que el selector de tema no hacia nada, daba igual el tono.
+      // Comprobar la RELACION si lo nota, y de paso sigue cubriendo el morado,
+      // que es la semilla del indice 0 y por tanto lo que se ve por omision.
       expect(
         theme.colorScheme.primary,
         ColorScheme.fromSeed(

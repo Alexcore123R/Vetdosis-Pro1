@@ -90,24 +90,23 @@ import '../modules/auth/presentation/auth_screen.dart';
 
 /// Los cinco temas del selector de Ajustes, con nombre y semilla.
 ///
-/// Antes eran colores de catalogo (esmeralda, oceano, indigo, ambar,
-/// obsidiana) ajenos a la familia de la marca, asi que al elegir uno la app
-/// dejaba de parecerse a si misma. Ahora los cinco salen de [VetColors].
-///
-/// El indice 0 conserva el verdeazulado exacto que el neu tenia fijado a mano
-/// (#087F83), para que a quien no haya tocado el selector no le cambie nada:
-/// es el valor por defecto de [AppSettings.palette].
+/// El indice 0 es el morado de la marca, que es el tema por omision: lo
+/// decidio 54bddae al pasar el primario de verde esmeralda a morado, y se
+/// respeta aqui. Los otros cuatro eran colores de catalogo (oceano, indigo,
+/// ambar, obsidiana) ajenos a la familia, asi que al elegir uno la app dejaba
+/// de parecerse a si misma; pasan a [VetColors]. El verdeazulado que el neu
+/// llevaba fijado a mano no se pierde: queda como «Turquesa».
 ///
 /// Son SEMILLAS, no colores finales. Material 3 deriva de cada una un
 /// `primary` y un `onPrimary` que contrastan entre si, que es lo que exige
-/// `platform_review_test` a las cinco paletas en los dos brillos. De ahi que
-/// aqui puedan convivir tonos claros de marca con uno oscuro.
-const paletteNames = ['Turquesa', 'Cielo', 'Lila', 'Violeta', 'Menta'];
+/// `platform_review_test` a las cinco paletas en los dos brillos. Por eso ya
+/// no hace falta elegir a mano un morado claro para oscuro y otro para claro.
+const paletteNames = ['Amatista', 'Turquesa', 'Cielo', 'Lila', 'Menta'];
 const paletteColors = [
+  VetColors.purple,
   Color(0xFF087F83),
   VetColors.brandSky,
   VetColors.brandLilac,
-  VetColors.purple,
   VetColors.mint,
 ];
 
@@ -189,10 +188,17 @@ class VetDosisApp extends StatelessWidget {
     // indice, pintaba su chip como elegido y no cambiaba ni un pixel. Y como
     // visualStyle viene en 'neu' de fabrica, no cambiaba para nadie.
     //
+    // 54bddae cambio CUAL era ese color fijo (de verde a morado), que es lo
+    // que se ve hoy, pero el selector seguia muerto. Aqui se arregla lo otro:
+    // el tono elegido manda. El morado sigue siendo lo que se ve por omision
+    // porque es la semilla del indice 0.
+    //
     // Fijar primary a mano era ademas lo que impedia que platform_review_test
     // comprobara algo: recorre las cinco paletas exigiendo 4.5:1 entre primary
     // y onPrimary, y las cinco le devolvian el mismo color. Al sembrar de
-    // verdad, esa prueba pasa a medir las cinco.
+    // verdad, esa prueba pasa a medir las cinco, y por eso ya no hace falta
+    // escoger a mano el #B69BFF de oscuro ni el #2A1055 de la tinta: M3 los
+    // deriva y la prueba los verifica.
     //
     // Lo que el neu si conserva son las SUPERFICIES. El fondo, la placa y la
     // tinta son el ESTILO y salen de las maquetas de Ale; el acento es otra

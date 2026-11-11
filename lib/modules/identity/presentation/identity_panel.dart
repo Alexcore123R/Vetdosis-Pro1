@@ -11,14 +11,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../auth/domain/clinic_membership.dart';
 import '../../forms/domain/form_repository.dart';
 import '../../forms/presentation/branding_editor.dart';
+import '../../../vet_ui/vet_icons.dart';
 
 final identityChanges = ValueNotifier<int>(0);
 const profileIcons = [
-  Icons.person,
-  Icons.pets,
-  Icons.local_hospital,
-  Icons.science,
-  Icons.agriculture,
+  VetIcons.user,
+  VetIcons.paw,
+  VetIcons.hospital,
+  VetIcons.flask,
+  VetIcons.tractor,
 ];
 
 /// Private account identity with a scoped local fallback and explicit upload retry.
@@ -53,7 +54,7 @@ class AccountAvatar extends StatelessWidget {
                     width: size,
                     height: size,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => const Icon(Icons.person),
+                    errorBuilder: (_, _, _) => const Icon(VetIcons.user),
                   ),
                 )
               : Icon(
@@ -178,14 +179,14 @@ class _ClinicIdentityState extends State<ClinicIdentity> {
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: bytes == null
-                ? const Icon(Icons.business, size: 40)
+                ? const Icon(VetIcons.clinic, size: 40)
                 : Image.memory(
                     bytes,
                     width: 48,
                     height: 48,
                     fit: BoxFit.contain,
                     errorBuilder: (_, _, _) =>
-                        const Icon(Icons.business, size: 40),
+                        const Icon(VetIcons.clinic, size: 40),
                   ),
             title: Text(widget.member.clinicName),
             subtitle: Text(
@@ -201,7 +202,7 @@ class _ClinicIdentityState extends State<ClinicIdentity> {
               widget.repository != null)
             OutlinedButton.icon(
               onPressed: edit,
-              icon: const Icon(Icons.edit_outlined),
+              icon: const Icon(VetIcons.pencil),
               label: const Text('Logo y membrete de la clínica'),
             ),
         ],
@@ -441,7 +442,7 @@ class _ProfileAppearanceState extends State<ProfileAppearance> {
         ),
       TextButton.icon(
         onPressed: busy ? null : () => save(null),
-        icon: const Icon(Icons.add_photo_alternate_outlined),
+        icon: const Icon(VetIcons.image),
         label: const Text('Subir foto de perfil'),
       ),
       Wrap(

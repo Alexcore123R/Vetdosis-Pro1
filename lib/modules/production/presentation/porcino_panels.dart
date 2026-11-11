@@ -6,6 +6,7 @@ import '../domain/porcino_calculators.dart';
 import '../domain/porcino_capacity.dart';
 import '../domain/porcino_reference.dart';
 import 'growth_panel.dart';
+import '../../../vet_ui/vet_icons.dart';
 
 /// Paneles del módulo Porcinos para cada actividad. Cálculos de sesión: no
 /// guardan registros de granja ni consultan Supabase.
@@ -13,7 +14,7 @@ List<Widget> porcinoPanelsFor(String activity, {required bool showCosts}) {
   const notice = VetNotice(
     text:
         'Cálculos de sesión con valores de referencia de clase. No guardan registros de granja y no son metas de rendimiento.',
-    icon: Icons.fact_check_outlined,
+    icon: VetIcons.clipboardChecks,
   );
   return switch (activity) {
     'Reproducción y gestación' => [
@@ -41,7 +42,7 @@ List<Widget> porcinoPanelsFor(String activity, {required bool showCosts}) {
       const PorcinoSpacePanel(
         title: 'Espacio en destete',
         weights: porcinoNurseryWeights,
-        icon: Icons.grid_view_rounded,
+        icon: VetIcons.grid,
       ),
       const _Gap(),
       const PorcinoSiloPanel(
@@ -65,7 +66,7 @@ List<Widget> porcinoPanelsFor(String activity, {required bool showCosts}) {
       const PorcinoSpacePanel(
         title: 'Espacio en engorda',
         weights: porcinoFinishingWeights,
-        icon: Icons.grid_view_rounded,
+        icon: VetIcons.grid,
       ),
       const _Gap(),
       const PorcinoSiloPanel(
@@ -86,7 +87,7 @@ List<Widget> porcinoPanelsFor(String activity, {required bool showCosts}) {
         const VetNotice(
           text:
               'La estimación de inversión requiere el permiso de Planeación financiera.',
-          icon: Icons.lock_outline,
+          icon: VetIcons.lock,
           kind: VetBadgeKind.warning,
         ),
     ],
@@ -304,7 +305,7 @@ class _PorcinoFlowPanelState extends State<PorcinoFlowPanel> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const _PanelHeader(
-            icon: Icons.account_tree_outlined,
+            icon: VetIcons.hierarchy,
             title: 'Flujo de bandas y capacidad',
             subtitle: 'De vientres a partos por semana, lechones y espacios.',
           ),
@@ -356,7 +357,7 @@ class _PorcinoFlowPanelState extends State<PorcinoFlowPanel> {
           ),
           const SizedBox(height: 8),
           VetActionButton(
-            icon: Icons.calculate_outlined,
+            icon: VetIcons.calculator,
             label: 'Calcular flujo',
             onPressed: calculate,
           ),
@@ -367,7 +368,7 @@ class _PorcinoFlowPanelState extends State<PorcinoFlowPanel> {
           if (error != null)
             VetNotice(
               text: error!,
-              icon: Icons.error_outline,
+              icon: VetIcons.alertOctagon,
               kind: VetBadgeKind.danger,
             ),
           if (r != null) ...[
@@ -450,7 +451,7 @@ class _PorcinoSiloPanelState extends State<PorcinoSiloPanel> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _PanelHeader(
-            icon: Icons.inventory_2_outlined,
+            icon: VetIcons.box,
             title: widget.title,
             subtitle:
                 'Animales × consumo diario × días de inventario deseado.',
@@ -492,7 +493,7 @@ class _PorcinoSiloPanelState extends State<PorcinoSiloPanel> {
           ),
           const SizedBox(height: 8),
           VetActionButton(
-            icon: Icons.calculate_outlined,
+            icon: VetIcons.calculator,
             label: 'Calcular silo',
             onPressed: calculate,
           ),
@@ -501,7 +502,7 @@ class _PorcinoSiloPanelState extends State<PorcinoSiloPanel> {
               padding: const EdgeInsets.only(top: 10),
               child: VetNotice(
                 text: error!,
-                icon: Icons.error_outline,
+                icon: VetIcons.alertOctagon,
                 kind: VetBadgeKind.danger,
               ),
             ),
@@ -627,7 +628,7 @@ class _PorcinoSpacePanelState extends State<PorcinoSpacePanel> {
           ),
           const SizedBox(height: 4),
           VetActionButton(
-            icon: Icons.calculate_outlined,
+            icon: VetIcons.calculator,
             label: 'Calcular superficie',
             onPressed: calculate,
           ),
@@ -636,7 +637,7 @@ class _PorcinoSpacePanelState extends State<PorcinoSpacePanel> {
               padding: const EdgeInsets.only(top: 10),
               child: VetNotice(
                 text: error!,
-                icon: Icons.error_outline,
+                icon: VetIcons.alertOctagon,
                 kind: VetBadgeKind.danger,
               ),
             ),
@@ -753,7 +754,7 @@ class _PorcinoVentilationPanelState extends State<PorcinoVentilationPanel> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const _PanelHeader(
-            icon: Icons.air_rounded,
+            icon: VetIcons.wind,
             title: 'Ventilación de la sala',
             subtitle: 'Caudal de aire = animales × tasa de diseño por animal.',
           ),
@@ -828,14 +829,14 @@ class _PorcinoVentilationPanelState extends State<PorcinoVentilationPanel> {
           ),
           const SizedBox(height: 8),
           VetActionButton(
-            icon: Icons.calculate_outlined,
+            icon: VetIcons.calculator,
             label: 'Calcular caudal',
             onPressed: calculate,
           ),
           if (error != null)
             VetNotice(
               text: error!,
-              icon: Icons.error_outline,
+              icon: VetIcons.alertOctagon,
               kind: VetBadgeKind.danger,
             ),
           if (r != null) ...[
@@ -943,7 +944,7 @@ class _PorcinoInverseCapacityPanelState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const _PanelHeader(
-            icon: Icons.swap_vert_rounded,
+            icon: VetIcons.swapVert,
             title: 'Capacidad inversa: de la producción a los vientres',
             subtitle:
                 'Para remodelar o redimensionar: cuántos vientres sostiene una producción semanal.',
@@ -1009,14 +1010,14 @@ class _PorcinoInverseCapacityPanelState
           ),
           const SizedBox(height: 8),
           VetActionButton(
-            icon: Icons.calculate_outlined,
+            icon: VetIcons.calculator,
             label: 'Calcular vientres',
             onPressed: calculate,
           ),
           if (error != null)
             VetNotice(
               text: error!,
-              icon: Icons.error_outline,
+              icon: VetIcons.alertOctagon,
               kind: VetBadgeKind.danger,
             ),
           if (r != null) ...[
@@ -1160,7 +1161,7 @@ class _PorcinoBiosecurityPanelState extends State<PorcinoBiosecurityPanel> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const _PanelHeader(
-            icon: Icons.shield_outlined,
+            icon: VetIcons.shield,
             title: 'Revisión de bioseguridad',
             subtitle:
                 'Marca lo que la granja ya tiene definido. Es una guía de revisión, no una auditoría.',
@@ -1210,14 +1211,14 @@ class _PorcinoBiosecurityPanelState extends State<PorcinoBiosecurityPanel> {
             }),
           ),
           VetActionButton(
-            icon: Icons.near_me_outlined,
+            icon: VetIcons.navigation,
             label: 'Ubicar en la escala',
             onPressed: classify,
           ),
           if (error != null)
             VetNotice(
               text: error!,
-              icon: Icons.error_outline,
+              icon: VetIcons.alertOctagon,
               kind: VetBadgeKind.danger,
             ),
           if (band != null)
@@ -1292,14 +1293,14 @@ class _PorcinoNitrogenPanelState extends State<PorcinoNitrogenPanel> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const _PanelHeader(
-            icon: Icons.water_drop_outlined,
+            icon: VetIcons.drop,
             title: 'Nitrógeno y huella hídrica gris',
             subtitle: 'Cuánta agua haría falta para diluir el nitrógeno que excretan los cerdos.',
           ),
           const VetNotice(
             text:
                 'Los valores precargados son de Yucatán (Dictamen SEMARNAT, 2023). Para otra región cambia la concentración natural, Cmax y la recarga con datos locales.',
-            icon: Icons.place_outlined,
+            icon: VetIcons.pin,
           ),
           const SizedBox(height: 8),
           _Field(controller: pigs, label: 'Cerdos', onChanged: reset),
@@ -1349,14 +1350,14 @@ class _PorcinoNitrogenPanelState extends State<PorcinoNitrogenPanel> {
           ),
           const SizedBox(height: 8),
           VetActionButton(
-            icon: Icons.calculate_outlined,
+            icon: VetIcons.calculator,
             label: 'Calcular huella',
             onPressed: calculate,
           ),
           if (error != null)
             VetNotice(
               text: error!,
-              icon: Icons.error_outline,
+              icon: VetIcons.alertOctagon,
               kind: VetBadgeKind.danger,
             ),
           if (r != null) ...[
@@ -1483,7 +1484,7 @@ class _PorcinoInvestmentPanelState extends State<PorcinoInvestmentPanel> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const _PanelHeader(
-            icon: Icons.request_quote_outlined,
+            icon: VetIcons.clipboardDollar,
             title: 'Estimado de inversión en equipo',
             subtitle:
                 'Lista de compras con los precios que tú cotices. No consulta precios en línea.',
@@ -1525,14 +1526,14 @@ class _PorcinoInvestmentPanelState extends State<PorcinoInvestmentPanel> {
           ),
           const SizedBox(height: 8),
           VetActionButton(
-            icon: Icons.add,
+            icon: VetIcons.add,
             label: 'Agregar concepto',
             onPressed: add,
           ),
           if (error != null)
             VetNotice(
               text: error!,
-              icon: Icons.error_outline,
+              icon: VetIcons.alertOctagon,
               kind: VetBadgeKind.danger,
             ),
           for (final (i, item) in items.indexed)
@@ -1552,7 +1553,7 @@ class _PorcinoInvestmentPanelState extends State<PorcinoInvestmentPanel> {
                 style: textTheme.bodySmall,
               ),
               trailing: IconButton(
-                icon: const Icon(Icons.delete_outline),
+                icon: const Icon(VetIcons.trash),
                 tooltip: 'Quitar concepto',
                 onPressed: () => setState(() => items.removeAt(i)),
               ),
@@ -1571,7 +1572,7 @@ class _PorcinoInvestmentPanelState extends State<PorcinoInvestmentPanel> {
                   text:
                       'El total NO incluye ${plan.unpriced.length} concepto(s) sin precio: '
                       '${plan.unpriced.map((i) => i.concept).join(', ')}.',
-                  icon: Icons.price_check_outlined,
+                  icon: VetIcons.clipboardDollar,
                   kind: VetBadgeKind.warning,
                 ),
               ),
@@ -1580,7 +1581,7 @@ class _PorcinoInvestmentPanelState extends State<PorcinoInvestmentPanel> {
                 text:
                     'Con menos de ${PriceEstimate.minReliableSamples} cotizaciones el estimado es débil: '
                     '${plan.weak.map((i) => i.concept).join(', ')}.',
-                icon: Icons.help_outline,
+                icon: VetIcons.help,
                 kind: VetBadgeKind.unverified,
               ),
           ],

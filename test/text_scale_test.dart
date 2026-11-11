@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vetdosis_pro/vet_ui/vet_components.dart';
 import 'package:vetdosis_pro/vet_ui/vet_theme.dart';
+import 'package:vetdosis_pro/vet_ui/vet_icons.dart';
 
 /// Lo que se comprueba aqui no es el gusto, es lo que hacia ilegibles las
 /// pantallas: que un titulo y su parrafo pesaran lo mismo.
@@ -84,14 +85,14 @@ void main() {
       const MaterialApp(
         home: Scaffold(
           body: VetSectionHeader(
-            icon: Icons.inventory_2_rounded,
+            icon: VetIcons.box,
             title: 'Inventario y caja',
           ),
         ),
       ),
     );
     expect(find.byType(VetIconBox), findsOneWidget);
-    expect(find.byIcon(Icons.inventory_2_rounded), findsOneWidget);
+    expect(find.byIcon(VetIcons.box), findsOneWidget);
   });
 
   testWidgets('Sin icono ni paso el encabezado sigue siendo solo texto', (

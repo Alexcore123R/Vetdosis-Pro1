@@ -74,6 +74,9 @@ Future<void> _fonts() async {
   await (FontLoader(
     'MaterialIcons',
   )..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'))).load();
+  await (FontLoader(
+    'VetIcons',
+  )..addFont(rootBundle.load('assets/fonts/VetIcons.ttf'))).load();
 }
 
 /// Avanza el reloj un tramo fijo en vez de esperar a que todo se detenga:

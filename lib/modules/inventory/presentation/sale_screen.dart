@@ -17,6 +17,7 @@ import '../domain/inventory_models.dart';
 import '../domain/inventory_repository.dart';
 import 'barcode_screen.dart';
 import 'credit_accounts_screen.dart';
+import '../../../vet_ui/vet_icons.dart';
 
 String inventoryError(Object error) {
   final planMessage = planActionError(error);
@@ -921,12 +922,12 @@ class _SaleScreenState extends State<SaleScreen> {
             ),
           OutlinedButton.icon(
             onPressed: busy ? null : scanProduct,
-            icon: const Icon(Icons.qr_code_scanner),
+            icon: const Icon(VetIcons.qrScan),
             label: const Text('Escanear producto para la nota de venta'),
           ),
           TextButton.icon(
             onPressed: busy ? null : enterBarcode,
-            icon: const Icon(Icons.keyboard),
+            icon: const Icon(VetIcons.keyboard),
             label: const Text('Ingresar código de barras'),
           ),
           for (final p in widget.products.where(
@@ -939,7 +940,7 @@ class _SaleScreenState extends State<SaleScreen> {
               subtitle: Text('${p['stock_unit']} · stock ${p['stock']}'),
               trailing: IconButton(
                 onPressed: busy ? null : () => addProduct(p),
-                icon: const Icon(Icons.add_shopping_cart),
+                icon: const Icon(VetIcons.cart),
               ),
             ),
           if (widget.admin)
@@ -956,7 +957,7 @@ class _SaleScreenState extends State<SaleScreen> {
                 trailing: IconButton(
                   tooltip: 'Agregar servicio del catálogo',
                   onPressed: busy ? null : () => addCatalogService(service),
-                  icon: const Icon(Icons.add_shopping_cart),
+                  icon: const Icon(VetIcons.cart),
                 ),
               ),
           if (widget.admin)
@@ -1001,7 +1002,7 @@ class _SaleScreenState extends State<SaleScreen> {
                           changed();
                         });
                       },
-                icon: const Icon(Icons.add),
+                icon: const Icon(VetIcons.add),
               ),
             ),
 
@@ -1022,7 +1023,7 @@ class _SaleScreenState extends State<SaleScreen> {
                           changed();
                         });
                       },
-                icon: const Icon(Icons.delete_outline),
+                icon: const Icon(VetIcons.trash),
               ),
             ),
           const SizedBox(height: 12),
@@ -1090,12 +1091,12 @@ class _SaleScreenState extends State<SaleScreen> {
           NeuStatRow(
             children: [
               for (final option in const [
-                ('efectivo', 'Efectivo', Icons.local_atm, VetColors.turquoise),
-                ('tarjeta', 'Tarjeta', Icons.credit_card, VetColors.brandSky),
+                ('efectivo', 'Efectivo', VetIcons.banknote, VetColors.turquoise),
+                ('tarjeta', 'Tarjeta', VetIcons.creditCard, VetColors.brandSky),
                 (
                   'transferencia',
                   'Transferencia',
-                  Icons.swap_horiz,
+                  VetIcons.swapHoriz,
                   VetColors.lilac,
                 ),
               ])
@@ -1174,7 +1175,7 @@ class _SaleScreenState extends State<SaleScreen> {
           if (creditOutcomeUncertain)
             OutlinedButton.icon(
               onPressed: busy ? null : resolveUncertainCreditSale,
-              icon: const Icon(Icons.fact_check_outlined),
+              icon: const Icon(VetIcons.clipboardChecks),
               label: const Text('Verificar resultado de la venta'),
             ),
           FilledButton(

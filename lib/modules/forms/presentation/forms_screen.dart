@@ -16,6 +16,7 @@ import 'document_flow_screen.dart';
 import 'form_pdf_screen.dart';
 import 'branding_editor.dart';
 import '../../../vet_ui/vet_components.dart';
+import '../../../vet_ui/vet_icons.dart';
 
 class FormsScreen extends StatefulWidget {
   const FormsScreen({
@@ -286,7 +287,7 @@ class _FormsScreenState extends State<FormsScreen> {
           ),
         OutlinedButton.icon(
           onPressed: model.busy ? null : model.load,
-          icon: const Icon(Icons.refresh),
+          icon: const Icon(VetIcons.refresh),
           label: const Text('Actualizar'),
         ),
         if (model.canBrand)
@@ -339,7 +340,7 @@ class _FormsScreenState extends State<FormsScreen> {
         for (final version in model.templates)
           NeuHeaderCard(
             title: version.schema['title'] as String,
-            icon: Icons.description_outlined,
+            icon: VetIcons.document,
             color: const Color(0xFFAC8DD5),
             child: Padding(
               padding: const EdgeInsets.all(12),
@@ -413,7 +414,7 @@ class _FormsScreenState extends State<FormsScreen> {
               subtitle: Text(
                 'Versión ${version.version} · aprobada para uso por la clínica',
               ),
-              trailing: const Icon(Icons.edit_note),
+              trailing: const Icon(VetIcons.noteEdit),
               onTap: model.busy ? null : () => create(version),
             ),
           ),
@@ -436,7 +437,7 @@ class _FormsScreenState extends State<FormsScreen> {
               '${formStateLabel(doc.state)} · ${doc.snapshot['patient']['name']}\n'
               '${doc.signed ? 'Firmado y agregado al expediente' : 'Borrador editable'}',
             ),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: const Icon(VetIcons.chevronRight),
             onTap: model.busy ? null : () => open(doc),
           ),
           if (widget.clinical != null &&

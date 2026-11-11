@@ -6,6 +6,7 @@ import '../../../vet_ui/vet_theme.dart';
 import '../../auth/presentation/auth_screen.dart';
 import '../../auth/presentation/auth_view_model.dart';
 import 'welcome_intro_video.dart';
+import '../../../vet_ui/vet_icons.dart';
 
 /// Public product entry shown before authentication.
 ///
@@ -107,7 +108,7 @@ class _PublicWelcomeScreenState extends State<PublicWelcomeScreen> {
                                 padding:
                                     const EdgeInsets.symmetric(horizontal: 3),
                                 child: Icon(
-                                  Icons.circle,
+                                  VetIcons.dot,
                                   size: i == _page ? 10 : 8,
                                   color: i == _page
                                       ? theme.colorScheme.primary
@@ -168,7 +169,7 @@ class _PublicWelcomeScreenState extends State<PublicWelcomeScreen> {
     const SizedBox(height: 22),
     FilledButton.icon(
       onPressed: () => _openAccess(context),
-      icon: const Icon(Icons.login),
+      icon: const Icon(VetIcons.login),
       label: const Text('Iniciar sesión'),
     ),
     const SizedBox(height: 10),
@@ -189,20 +190,20 @@ class _PublicWelcomeScreenState extends State<PublicWelcomeScreen> {
     ),
     const _GroupLabel('Especies'),
     const _FeatureCard(
-      icon: Icons.pets_rounded,
+      icon: VetIcons.paw,
       accent: VetColors.turquoise,
       title: 'Pequeñas especies',
       description: 'Perro y gato, con dosis por peso y por especie.',
     ),
     const _FeatureCard(
-      icon: Icons.agriculture_rounded,
+      icon: VetIcons.tractor,
       accent: VetColors.mint,
       title: 'Producción animal',
       description: 'Avicultura e incubación. Bovinos, ovinos y cerdos '
           'próximamente.',
     ),
     const _FeatureCard(
-      icon: Icons.eco_rounded,
+      icon: VetIcons.leaf,
       accent: VetColors.cyan,
       title: 'Exóticos',
       description: 'Próximamente.',
@@ -210,7 +211,7 @@ class _PublicWelcomeScreenState extends State<PublicWelcomeScreen> {
     const SizedBox(height: 18),
     const _GroupLabel('Administración clínica'),
     const _FeatureCard(
-      icon: Icons.calculate_rounded,
+      icon: VetIcons.calculator,
       accent: VetColors.turquoise,
       title: 'Cálculos con criterio',
       description: 'Dosis por especie y por kg, fluidoterapia y productos '
@@ -218,21 +219,21 @@ class _PublicWelcomeScreenState extends State<PublicWelcomeScreen> {
           'el error.',
     ),
     const _FeatureCard(
-      icon: Icons.assignment_rounded,
+      icon: VetIcons.clipboardList,
       accent: VetColors.violet,
       title: 'Pacientes y hospitalización',
       description: 'Expedientes, agenda, recetas y consentimientos en PDF. '
           'Seguimiento de hospitalizados con recordatorios.',
     ),
     const _FeatureCard(
-      icon: Icons.inventory_2_rounded,
+      icon: VetIcons.box,
       accent: VetColors.lilac,
       title: 'Inventario y caja',
       description: 'Escáner de códigos y lectura de etiquetas. Ventas, '
           'crédito, abonos y promociones.',
     ),
     const _FeatureCard(
-      icon: Icons.insights_rounded,
+      icon: VetIcons.chartGrowth,
       accent: VetColors.purple,
       title: 'Tu clínica como negocio',
       description: 'Dashboard, planeación financiera en pesos, punto de '
@@ -240,7 +241,7 @@ class _PublicWelcomeScreenState extends State<PublicWelcomeScreen> {
           'avisos, tablón de notas y comisiones.',
     ),
     const _FeatureCard(
-      icon: Icons.auto_awesome_rounded,
+      icon: VetIcons.sparkles,
       accent: VetColors.lavender,
       title: 'IA que asiste, no decide',
       description: 'Borradores, dictado por voz y lectura de etiquetas. '
@@ -264,19 +265,19 @@ class _PublicWelcomeScreenState extends State<PublicWelcomeScreen> {
       large: true,
     ),
     const _Plan(
-      icon: Icons.play_circle_outline_rounded,
+      icon: VetIcons.playCircle,
       accent: VetColors.turquoise,
       name: 'Gratis',
       description: 'Para empezar.',
     ),
     const _Plan(
-      icon: Icons.person_rounded,
+      icon: VetIcons.user,
       accent: VetColors.violet,
       name: 'Individual',
       description: 'Para el MVZ independiente.',
     ),
     const _Plan(
-      icon: Icons.groups_rounded,
+      icon: VetIcons.usersGroup,
       accent: VetColors.purple,
       name: 'Clínica',
       description: 'Para todo tu equipo.',
@@ -284,7 +285,7 @@ class _PublicWelcomeScreenState extends State<PublicWelcomeScreen> {
     const SizedBox(height: 10),
     const VetNotice(
       text: 'Beta cerrada. Planes y precios por anunciar.',
-      icon: Icons.lock_clock_rounded,
+      icon: VetIcons.lock,
     ),
     const SizedBox(height: 16),
   ];
@@ -382,7 +383,7 @@ class _SoonList extends StatelessWidget {
               child: Row(
                 children: [
                   const Icon(
-                    Icons.schedule_rounded,
+                    VetIcons.clock,
                     size: 20,
                     color: VetColors.muted,
                   ),

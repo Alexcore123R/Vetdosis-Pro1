@@ -88,6 +88,7 @@ import '../modules/core/presentation/core_view_model.dart';
 import '../modules/auth/presentation/auth_view_model.dart';
 import '../modules/auth/presentation/auth_screen.dart';
 import '../modules/ai/presentation/starter_help_panel.dart';
+import '../vet_ui/vet_icons.dart';
 
 /// Linea de un control de seleccion en estilo neumorfico.
 ///
@@ -838,19 +839,19 @@ class CoreShell extends StatelessWidget {
 
   Widget bottomNavigation(BuildContext context) {
     final destinations = <(String, IconData)>[
-      ('Inicio', Icons.home_outlined),
-      if (allowed('Agenda')) ('Agenda', Icons.calendar_month_outlined),
-      if (allowed('Pacientes')) ('Pacientes', Icons.pets_outlined),
-      if (allowed('Cálculos')) ('Cálculos', Icons.calculate_outlined),
+      ('Inicio', VetIcons.home),
+      if (allowed('Agenda')) ('Agenda', VetIcons.calendar),
+      if (allowed('Pacientes')) ('Pacientes', VetIcons.paw),
+      if (allowed('Cálculos')) ('Cálculos', VetIcons.calculator),
       // «Más» abria SectionMenu, el MISMO widget que el cajon lateral: el
       // quinto hueco de la barra repetia lo que el boton de hamburguesa ya
       // daba. Lo cede al asistente, que antes solo se alcanzaba por un icono
       // pequeño de la cabecera. Si no hay asistente (sin repositorio de IA o
       // sin permiso) el hueco vuelve a «Más» en vez de quedarse vacio.
       if (showsAiAction)
-        ('Asistente IA', Icons.auto_awesome)
+        ('Asistente IA', VetIcons.sparkles)
       else
-        ('Más', Icons.grid_view_outlined),
+        ('Más', VetIcons.grid),
     ];
     final page = switch (model.screen) {
       'Cálculo rápido' ||
@@ -1050,9 +1051,9 @@ class CoreShell extends StatelessWidget {
                           depth: .5,
                         ),
                       ),
-                      child: BrandGradientIcon(Icons.notifications_none),
+                      child: BrandGradientIcon(VetIcons.bell),
                     )
-                  : BrandGradientIcon(Icons.notifications_none),
+                  : BrandGradientIcon(VetIcons.bell),
             ),
         ],
       ),
@@ -1100,7 +1101,7 @@ class CoreShell extends StatelessWidget {
                 ),
               const Divider(),
               ListTile(
-                leading: const Icon(Icons.business_outlined),
+                leading: const Icon(VetIcons.clinic),
                 title: const Text('Gestión clínica'),
                 onTap: () {
                   Navigator.pop(context);
@@ -1157,7 +1158,7 @@ class CoreShell extends StatelessWidget {
                   highlightElevation: 0,
                   onPressed: () =>
                       model.navigate('Escanear etiqueta para dosis'),
-                  child: const Icon(Icons.document_scanner_outlined),
+                  child: const Icon(VetIcons.documentScan),
                 ),
               ),
             )
@@ -1851,7 +1852,7 @@ class CoreShell extends StatelessWidget {
   List<Widget> home(BuildContext context) => [
     if (auth?.active?.role == ClinicRole.revisor)
       ListTile(
-        leading: const Icon(Icons.rate_review_outlined),
+        leading: const Icon(VetIcons.clipboardChecks),
         title: const Text('Modo revisión de catálogos'),
         subtitle: const Text(
           'Datos sin verificar; comenta los errores por fila.',
@@ -1985,7 +1986,7 @@ class CoreShell extends StatelessWidget {
     Text('Cuenta y espacio', style: Theme.of(context).textTheme.titleLarge),
     if (auth != null)
       ListTile(
-        leading: const Icon(Icons.account_circle_outlined),
+        leading: const Icon(VetIcons.userCircle),
         title: const Text('Mi cuenta y clínicas'),
         subtitle: const Text('Espacio personal, clínica e invitaciones'),
         onTap: () => Navigator.push(
@@ -1997,7 +1998,7 @@ class CoreShell extends StatelessWidget {
         auth?.active != null &&
         auth?.offline != true)
       ListTile(
-        leading: const Icon(Icons.payments_outlined),
+        leading: const Icon(VetIcons.coins),
         title: const Text('Mis comisiones'),
         subtitle: const Text('Saldo, próximo pago e historial'),
         onTap: () => Navigator.push(
@@ -2018,7 +2019,7 @@ class CoreShell extends StatelessWidget {
       ),
     if (auth?.active != null)
       ListTile(
-        leading: const Icon(Icons.tune_outlined),
+        leading: const Icon(VetIcons.sliders),
         title: const Text('Perfil, módulos y flujos de la clínica'),
         subtitle: Text(
           !experienceReady
@@ -2096,7 +2097,7 @@ class CoreShell extends StatelessWidget {
           leading: Icon(sectionIcon(option.$3)),
           title: Text(option.$1),
           subtitle: Text(option.$2),
-          trailing: const Icon(Icons.chevron_right),
+          trailing: const Icon(VetIcons.chevronRight),
           onTap: () {
             if (option.$1 == 'Proveedor de IA y privacidad') {
               if (ai == null || auth?.active == null || auth?.offline == true) {
@@ -2158,7 +2159,7 @@ class CoreShell extends StatelessWidget {
       alignment: Alignment.centerLeft,
       child: FilledButton.icon(
         onPressed: () => model.navigate('Inicio'),
-        icon: const Icon(Icons.home_outlined),
+        icon: const Icon(VetIcons.home),
         label: const Text('Volver al inicio'),
       ),
     ),
@@ -2280,7 +2281,7 @@ class _ModuleSearchState extends State<_ModuleSearch> {
       children: [
         TextField(
           decoration: const InputDecoration(
-            prefixIcon: Icon(Icons.search),
+            prefixIcon: Icon(VetIcons.search),
             labelText: 'Buscar apartados y herramientas',
           ),
           onChanged: (value) => setState(() => query = value),

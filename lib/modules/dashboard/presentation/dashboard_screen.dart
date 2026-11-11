@@ -14,6 +14,7 @@ import '../../hospital/application/hospital_alerts.dart';
 import '../../prescribing/presentation/rx_entry_screen.dart';
 import 'dashboard_view_model.dart';
 import 'alert_preferences_panel.dart';
+import '../../../vet_ui/vet_icons.dart';
 
 /// Inicio: resumen del espacio, accesos a los modulos y proximas citas.
 ///
@@ -97,7 +98,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         trailing: IconButton(
           tooltip: 'Abrir $title',
           onPressed: () => openPage(page),
-          icon: const Icon(Icons.chevron_right),
+          icon: const Icon(VetIcons.chevronRight),
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -177,7 +178,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       (
         'Pacientes',
         model.patientCount?.toString() ?? '—',
-        Icons.pets_outlined,
+        VetIcons.paw,
         VetColors.turquoise,
       ),
     if (model.member != null &&
@@ -186,7 +187,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       (
         'Citas por venir',
         model.agenda == null ? '—' : '${model.upcoming.length}',
-        Icons.calendar_month_outlined,
+        VetIcons.calendar,
         VetColors.violet,
       ),
     if (model.member != null &&
@@ -195,7 +196,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       (
         'En hospital',
         model.ward == null ? '—' : '${model.ward!.stays.length}',
-        Icons.local_hospital_outlined,
+        VetIcons.hospital,
         VetColors.cyan,
       ),
     if (model.member != null &&
@@ -205,7 +206,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       (
         'Tareas visibles',
         model.agenda == null ? '—' : '${model.pendingTasks.length}',
-        Icons.task_alt,
+        VetIcons.checkCircle,
         VetColors.lilac,
       ),
   ];
@@ -313,7 +314,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 onPressed: m.busy
                     ? null
                     : () => m.load(offline: widget.offline),
-                icon: const Icon(Icons.refresh),
+                icon: const Icon(VetIcons.refresh),
               ),
             ],
           ),
@@ -637,7 +638,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           controller: search,
                           decoration: const InputDecoration(
                             labelText: 'Buscar producto por nombre o código',
-                            prefixIcon: Icon(Icons.search),
+                            prefixIcon: Icon(VetIcons.search),
                           ),
                           onChanged: (_) => setState(() {}),
                         ),
@@ -680,7 +681,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             onPressed: widget.offline || m.busy || openingCash
                                 ? null
                                 : openCash,
-                            icon: const Icon(Icons.lock_open),
+                            icon: const Icon(VetIcons.lockOpen),
                             label: const Text('Abrir caja'),
                           ),
                         ] else ...[

@@ -9,6 +9,7 @@ import 'team_screen.dart';
 import 'package:flutter/material.dart';
 import '../domain/clinic_membership.dart';
 import 'auth_view_model.dart';
+import '../../../vet_ui/vet_icons.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key, required this.model, this.configured = true, this.initialRegister = false});
@@ -147,7 +148,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           autofillHints: const [AutofillHints.email],
                           decoration: const InputDecoration(
                             labelText: 'Correo electrónico',
-                            prefixIcon: Icon(Icons.mail_outline),
+                            prefixIcon: Icon(VetIcons.mail),
                           ),
                           validator: (value) =>
                               value != null &&
@@ -165,7 +166,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             autofillHints: const [AutofillHints.password],
                             decoration: InputDecoration(
                               labelText: 'Contraseña',
-                              prefixIcon: const Icon(Icons.lock_outline),
+                              prefixIcon: const Icon(VetIcons.lock),
                               suffixIcon: IconButton(
                                 tooltip: _showPassword
                                     ? 'Ocultar contraseña'
@@ -175,8 +176,8 @@ class _AuthScreenState extends State<AuthScreen> {
                                 ),
                                 icon: Icon(
                                   _showPassword
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined,
+                                      ? VetIcons.eye
+                                      : VetIcons.eyeOff,
                                 ),
                               ),
                             ),
@@ -286,7 +287,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         onPressed: model.busy
                             ? null
                             : model.createPersonalWorkspace,
-                        icon: const Icon(Icons.person_outline),
+                        icon: const Icon(VetIcons.user),
                         label: const Text('Usar mi espacio personal'),
                       ),
                     const Text(
@@ -401,7 +402,7 @@ class _ClinicAccountScreenState extends State<ClinicAccountScreen> {
             if (model.personalAvailable)
               TextButton.icon(
                 onPressed: model.busy ? null : model.createPersonalWorkspace,
-                icon: const Icon(Icons.person_outline),
+                icon: const Icon(VetIcons.user),
                 label: const Text('Abrir mi espacio personal'),
               ),
             for (final member in model.memberships)
@@ -411,7 +412,7 @@ class _ClinicAccountScreenState extends State<ClinicAccountScreen> {
                   member.isPersonal ? 'Espacio personal' : member.role.label,
                 ),
                 trailing: model.active == member
-                    ? const Icon(Icons.check_circle_outline)
+                    ? const Icon(VetIcons.checkCircle)
                     : null,
                 onTap: model.busy ? null : () => model.selectClinic(member),
               ),
@@ -430,7 +431,7 @@ class _ClinicAccountScreenState extends State<ClinicAccountScreen> {
                           ),
                         ),
                       ),
-                icon: const Icon(Icons.verified_user_outlined),
+                icon: const Icon(VetIcons.shieldCheck),
                 label: const Text('Permisos y habilitación'),
               ),
             if (!model.offline &&
@@ -445,7 +446,7 @@ class _ClinicAccountScreenState extends State<ClinicAccountScreen> {
                         TeamDutyScreen(model: model, clinic: model.active!),
                   ),
                 ),
-                icon: const Icon(Icons.schedule),
+                icon: const Icon(VetIcons.clock),
                 label: const Text('Equipo: horarios y faltas'),
               ),
             if (!model.offline &&
@@ -464,7 +465,7 @@ class _ClinicAccountScreenState extends State<ClinicAccountScreen> {
                                 TeamScreen(model: model, clinic: model.active!),
                           ),
                         ),
-                  icon: const Icon(Icons.groups_outlined),
+                  icon: const Icon(VetIcons.usersGroup),
                   label: const Text('Administrar equipo e invitaciones'),
                 ),
               const Text('Invitar a una persona a esta clínica'),

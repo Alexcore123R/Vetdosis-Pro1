@@ -21,6 +21,7 @@ import '../../forms/clinical/clinical_repository.dart';
 import '../domain/hospital_repository.dart';
 import 'hospital_view_model.dart';
 import 'hospital_forms.dart';
+import '../../../vet_ui/vet_icons.dart';
 
 class HospitalScreen extends StatefulWidget {
   const HospitalScreen({
@@ -733,7 +734,7 @@ class _HospitalScreenState extends State<HospitalScreen> {
               if (model.canManageAdmission)
                 FilledButton.icon(
                   onPressed: model.busy ? null : admit,
-                  icon: const Icon(Icons.add),
+                  icon: const Icon(VetIcons.add),
                   label: const Text('Ingresar paciente'),
                 ),
               OutlinedButton(
@@ -835,7 +836,7 @@ class _HospitalScreenState extends State<HospitalScreen> {
                   );
                   if (date != null && mounted) setState(() => day = date);
                 },
-                icon: const Icon(Icons.calendar_today),
+                icon: const Icon(VetIcons.calendar),
                 label: Text('Fecha: ${day.toIso8601String().substring(0, 10)}'),
               ),
               glowChip(ChoiceChip(
@@ -913,7 +914,7 @@ class _HospitalScreenState extends State<HospitalScreen> {
               // y nombre arriba, y debajo lo que ya se mostraba.
               NeuHeaderCard(
                 title: 'Jaula ${stay.cageLabel} · ${stay.patientName}',
-                icon: Icons.pets,
+                icon: VetIcons.paw,
                 color: sectionAccent('Hospitalización'),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -997,7 +998,7 @@ class _HospitalScreenState extends State<HospitalScreen> {
 
                       if (widget.clinical != null)
                         TextButton.icon(
-                          icon: const Icon(Icons.monitor_weight_outlined),
+                          icon: const Icon(VetIcons.scale),
                           label: const Text('Peso diario'),
                           onPressed: model.busy
                               ? null

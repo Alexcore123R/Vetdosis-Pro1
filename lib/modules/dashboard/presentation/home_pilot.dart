@@ -5,6 +5,7 @@ import '../../../core/widgets/workspace_panel.dart';
 import '../../../core/widgets/neu_identity.dart';
 import '../../../vet_ui/vet_theme.dart';
 import '../../core/presentation/core_view_model.dart';
+import '../../../vet_ui/vet_icons.dart';
 
 /// Shared shell presentation. It never changes membership or access.
 ThemeData homePilotTheme(ThemeData base) {
@@ -177,8 +178,8 @@ class HomePracticeSelector extends StatelessWidget {
           onPressed: () => onChanged(ClinicalBranch.management),
           icon: Icon(
             selected == ClinicalBranch.management
-                ? Icons.check_circle_outline
-                : Icons.business_outlined,
+                ? VetIcons.checkCircle
+                : VetIcons.clinic,
           ),
           label: const Text('Gestión clínica'),
         ),

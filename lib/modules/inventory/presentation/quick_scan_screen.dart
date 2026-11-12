@@ -6,6 +6,7 @@ import '../../auth/domain/clinic_membership.dart';
 import '../domain/inventory_repository.dart';
 import 'barcode_screen.dart';
 import 'inventory_screen.dart';
+import '../../../vet_ui/vet_icons.dart';
 
 class QuickScanScreen extends StatefulWidget {
   const QuickScanScreen({
@@ -101,7 +102,7 @@ class _QuickScanScreenState extends State<QuickScanScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             heading(
-              Icons.qr_code_scanner,
+              VetIcons.qrScan,
               sectionAccent('Escanear producto'),
               'Escanear producto',
               'Busca por código de barras en tu inventario. El código no '
@@ -110,7 +111,7 @@ class _QuickScanScreenState extends State<QuickScanScreen> {
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: scan,
-              icon: const Icon(Icons.qr_code_scanner),
+              icon: const Icon(VetIcons.qrScan),
               label: const Text('Abrir cámara'),
             ),
             const SizedBox(height: 12),
@@ -119,14 +120,14 @@ class _QuickScanScreenState extends State<QuickScanScreen> {
               maxLength: 200,
               decoration: const InputDecoration(
                 labelText: 'Código manual o escaneado',
-                prefixIcon: Icon(Icons.pin_outlined),
+                prefixIcon: Icon(VetIcons.barcode),
               ),
               onChanged: (_) => setState(() {}),
               onSubmitted: (_) => search(),
             ),
             OutlinedButton.icon(
               onPressed: code.text.trim().isEmpty ? null : search,
-              icon: const Icon(Icons.search),
+              icon: const Icon(VetIcons.search),
               label: const Text('Buscar en inventario'),
             ),
           ],
@@ -140,7 +141,7 @@ class _QuickScanScreenState extends State<QuickScanScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               heading(
-                Icons.document_scanner_outlined,
+                VetIcons.documentScan,
                 VetColors.violet,
                 'Etiqueta para dosis',
                 'Lee la etiqueta de un producto para preparar el cálculo. '
@@ -150,7 +151,7 @@ class _QuickScanScreenState extends State<QuickScanScreen> {
               const SizedBox(height: 16),
               FilledButton.icon(
                 onPressed: widget.onOpenLabelScanner,
-                icon: const Icon(Icons.document_scanner_outlined),
+                icon: const Icon(VetIcons.documentScan),
                 label: const Text('Abrir lector de etiquetas'),
               ),
             ],

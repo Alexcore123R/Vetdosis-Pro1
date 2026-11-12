@@ -4,6 +4,7 @@ import '../core/widgets/workspace_panel.dart';
 import 'package:flutter/material.dart';
 
 import 'vet_theme.dart';
+import 'vet_icons.dart';
 
 enum VetActionStyle { primary, secondary, neutral, destructive }
 
@@ -267,9 +268,9 @@ class VetPracticeSelector extends StatelessWidget {
   final ValueChanged<int> onChanged;
   static const labels = ['Pequeñas especies', 'Exóticos', 'Producción'];
   static const icons = [
-    Icons.pets_outlined,
-    Icons.cruelty_free_outlined,
-    Icons.agriculture_outlined,
+    VetIcons.paw,
+    VetIcons.rabbit,
+    VetIcons.tractor,
   ];
   @override
   Widget build(BuildContext context) => Row(
@@ -528,7 +529,7 @@ class VetNotice extends StatelessWidget {
   const VetNotice({
     super.key,
     required this.text,
-    this.icon = Icons.info_outline,
+    this.icon = VetIcons.info,
     this.kind = VetBadgeKind.information,
   });
   final String text;

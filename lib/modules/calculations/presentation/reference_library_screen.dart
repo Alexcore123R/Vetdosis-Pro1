@@ -2,6 +2,7 @@ import '../../../core/widgets/accent_glow.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../data/reference_library_repository.dart';
+import '../../../vet_ui/vet_icons.dart';
 
 class ReferenceLibraryScreen extends StatefulWidget {
   const ReferenceLibraryScreen({
@@ -101,7 +102,7 @@ class _ReferenceLibraryScreenState extends State<ReferenceLibraryScreen> {
           if (value('source_url').isNotEmpty)
             TextButton.icon(
               onPressed: () => openSource(value('source_url')),
-              icon: const Icon(Icons.open_in_new),
+              icon: const Icon(VetIcons.externalLink),
               label: const Text('Abrir fuente'),
             ),
         ]),
@@ -126,7 +127,7 @@ class _ReferenceLibraryScreenState extends State<ReferenceLibraryScreen> {
         decoration: InputDecoration(
           labelText: 'Buscar especie, parámetro o fuente',
           border: const OutlineInputBorder(),
-          suffixIcon: IconButton(onPressed: () => load(reset: true), icon: const Icon(Icons.search)),
+          suffixIcon: IconButton(onPressed: () => load(reset: true), icon: const Icon(VetIcons.search)),
         ),
         onSubmitted: (_) => load(reset: true),
       ),

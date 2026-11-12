@@ -7,12 +7,13 @@ import 'package:vetdosis_pro/core/widgets/neu_pos.dart';
 import 'package:vetdosis_pro/modules/inventory/presentation/sale_screen.dart';
 
 import 'inventory_test.dart' show Repo, data;
+import 'package:vetdosis_pro/vet_ui/vet_icons.dart';
 
 /// Carpeta de captura opcional; sin ella la prueba solo comprueba.
 const _shot = String.fromEnvironment('SALE_KEYPAD_SHOT');
 
 Future<void> _addTwoUnits(WidgetTester tester) async {
-  await tester.tap(find.byIcon(Icons.add_shopping_cart));
+  await tester.tap(find.byIcon(VetIcons.cart));
   await tester.pumpAndSettle();
   await tester.tap(find.byType(DropdownButtonFormField<String>).first);
   await tester.pumpAndSettle();

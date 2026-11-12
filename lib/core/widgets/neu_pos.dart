@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'contrast.dart';
 import 'neu_identity.dart';
 import 'workspace_panel.dart';
+import '../../vet_ui/vet_icons.dart';
 
 /// Piezas del punto de venta segun las maquetas de «Caja» que entrego Ale:
 /// mosaicos de resumen, el boton redondo de «Nueva venta» y el teclado
@@ -267,7 +268,7 @@ class NeuKeypad extends StatelessWidget {
                       child: Center(
                         child: key == '<'
                             ? Icon(
-                                Icons.backspace_outlined,
+                                VetIcons.backspace,
                                 color: theme.colorScheme.onSurfaceVariant,
                               )
                             : Text(

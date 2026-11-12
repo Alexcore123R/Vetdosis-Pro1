@@ -5,7 +5,9 @@ import '../../../vet_ui/vet_components.dart';
 import '../../../vet_ui/vet_theme.dart';
 import '../../auth/presentation/auth_screen.dart';
 import '../../auth/presentation/auth_view_model.dart';
+import 'clinic_highlights.dart';
 import 'welcome_intro_video.dart';
+import '../../../vet_ui/vet_icons.dart';
 
 /// Public product entry shown before authentication.
 ///
@@ -107,7 +109,7 @@ class _PublicWelcomeScreenState extends State<PublicWelcomeScreen> {
                                 padding:
                                     const EdgeInsets.symmetric(horizontal: 3),
                                 child: Icon(
-                                  Icons.circle,
+                                  VetIcons.dot,
                                   size: i == _page ? 10 : 8,
                                   color: i == _page
                                       ? theme.colorScheme.primary
@@ -168,7 +170,7 @@ class _PublicWelcomeScreenState extends State<PublicWelcomeScreen> {
     const SizedBox(height: 22),
     FilledButton.icon(
       onPressed: () => _openAccess(context),
-      icon: const Icon(Icons.login),
+      icon: const Icon(VetIcons.login),
       label: const Text('Iniciar sesión'),
     ),
     const SizedBox(height: 10),
@@ -189,64 +191,28 @@ class _PublicWelcomeScreenState extends State<PublicWelcomeScreen> {
     ),
     const _GroupLabel('Especies'),
     const _FeatureCard(
-      icon: Icons.pets_rounded,
+      icon: VetIcons.paw,
       accent: VetColors.turquoise,
       title: 'Pequeñas especies',
       description: 'Perro y gato, con dosis por peso y por especie.',
     ),
     const _FeatureCard(
-      icon: Icons.agriculture_rounded,
+      icon: VetIcons.tractor,
       accent: VetColors.mint,
       title: 'Producción animal',
       description: 'Avicultura e incubación. Bovinos, ovinos y cerdos '
           'próximamente.',
     ),
     const _FeatureCard(
-      icon: Icons.eco_rounded,
+      icon: VetIcons.leaf,
       accent: VetColors.cyan,
       title: 'Exóticos',
       description: 'Próximamente.',
     ),
     const SizedBox(height: 18),
     const _GroupLabel('Administración clínica'),
-    const _FeatureCard(
-      icon: Icons.calculate_rounded,
-      accent: VetColors.turquoise,
-      title: 'Cálculos con criterio',
-      description: 'Dosis por especie y por kg, fluidoterapia y productos '
-          'comerciales. Vademécum con fuentes. Tú validas, la app te ahorra '
-          'el error.',
-    ),
-    const _FeatureCard(
-      icon: Icons.assignment_rounded,
-      accent: VetColors.violet,
-      title: 'Pacientes y hospitalización',
-      description: 'Expedientes, agenda, recetas y consentimientos en PDF. '
-          'Seguimiento de hospitalizados con recordatorios.',
-    ),
-    const _FeatureCard(
-      icon: Icons.inventory_2_rounded,
-      accent: VetColors.lilac,
-      title: 'Inventario y caja',
-      description: 'Escáner de códigos y lectura de etiquetas. Ventas, '
-          'crédito, abonos y promociones.',
-    ),
-    const _FeatureCard(
-      icon: Icons.insights_rounded,
-      accent: VetColors.purple,
-      title: 'Tu clínica como negocio',
-      description: 'Dashboard, planeación financiera en pesos, punto de '
-          'equilibrio. Equipo con permisos, asistencia, horarios, mensajes, '
-          'avisos, tablón de notas y comisiones.',
-    ),
-    const _FeatureCard(
-      icon: Icons.auto_awesome_rounded,
-      accent: VetColors.lavender,
-      title: 'IA que asiste, no decide',
-      description: 'Borradores, dictado por voz y lectura de etiquetas. '
-          'Siempre con tu revisión profesional.',
-    ),
-    const SizedBox(height: 18),
+    const ClinicHighlights(),
+    const SizedBox(height: 4),
     const _GroupLabel('Próximamente'),
     const _SoonList([
       'Trabajo sin conexión',
@@ -264,19 +230,19 @@ class _PublicWelcomeScreenState extends State<PublicWelcomeScreen> {
       large: true,
     ),
     const _Plan(
-      icon: Icons.play_circle_outline_rounded,
+      icon: VetIcons.playCircle,
       accent: VetColors.turquoise,
       name: 'Gratis',
       description: 'Para empezar.',
     ),
     const _Plan(
-      icon: Icons.person_rounded,
+      icon: VetIcons.user,
       accent: VetColors.violet,
       name: 'Individual',
       description: 'Para el MVZ independiente.',
     ),
     const _Plan(
-      icon: Icons.groups_rounded,
+      icon: VetIcons.usersGroup,
       accent: VetColors.purple,
       name: 'Clínica',
       description: 'Para todo tu equipo.',
@@ -284,8 +250,11 @@ class _PublicWelcomeScreenState extends State<PublicWelcomeScreen> {
     const SizedBox(height: 10),
     const VetNotice(
       text: 'Beta cerrada. Planes y precios por anunciar.',
-      icon: Icons.lock_clock_rounded,
+      icon: VetIcons.lock,
     ),
+    const SizedBox(height: 22),
+    const _GroupLabel('Administración clínica'),
+    const ClinicHighlights(),
     const SizedBox(height: 16),
   ];
 }
@@ -382,7 +351,7 @@ class _SoonList extends StatelessWidget {
               child: Row(
                 children: [
                   const Icon(
-                    Icons.schedule_rounded,
+                    VetIcons.clock,
                     size: 20,
                     color: VetColors.muted,
                   ),
@@ -412,12 +381,36 @@ class _Plan extends StatelessWidget {
   final String name;
   final String description;
 
+  static const double _radius = 24;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: VetCard(
+      padding: const EdgeInsets.only(bottom: 16),
+      // Cada plan lleva el contorno y un halo leve de su propio color, segun
+      // la referencia de Ale: asi los tres se distinguen de un vistazo y la
+      // lamina de precios no es una pila de tarjetas iguales. El contorno va
+      // en primer plano para no mover el contenido de la tarjeta.
+      child: DecoratedBox(
+        position: DecorationPosition.foreground,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(_radius),
+          border: Border.all(color: accent.withValues(alpha: .7), width: 1.4),
+        ),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(_radius),
+            boxShadow: [
+              BoxShadow(
+                color: accent.withValues(alpha: .34),
+                blurRadius: 18,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: VetCard(
+        radius: _radius,
         child: Row(
           children: [
             VetIconBox(icon: icon, accent: accent),
@@ -443,6 +436,8 @@ class _Plan extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
         ),
       ),
     );

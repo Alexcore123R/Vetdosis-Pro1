@@ -70,3 +70,8 @@ flutter:
           weight: 700
         - asset: assets/fonts/PlusJakartaSans-800.ttf
           weight: 800
+    # Iconos propios de VetDosis. Se genera con tools/icons/build_font.py
+    # a partir de tools/icons/svg/; no se edita a mano.
+    - family: VetIcons
+      fonts:
+        - asset: assets/fonts/VetIcons.ttf

@@ -14,18 +14,21 @@ const neuLilac = Color(0xFFC5A8EF);
 /// levantar una tarjeta sin recalcular los desplazamientos.
 List<BoxShadow> neuShadows(bool dark, {double depth = 1}) => [
   BoxShadow(
-    // Por indicacion de Ale el relieve va mas suave: antes la sombra iba al
-    // 50% y el brillo casi opaco, y el resultado quedaba muy marcado frente
-    // a las maquetas. Se baja la opacidad y se acorta el desplazamiento; el
-    // desenfoque se mantiene ancho para que difumine en vez de recortar.
-    color: dark ? const Color(0x59000000) : const Color(0x47B8BDCE),
-    offset: Offset(3 * depth, 3 * depth),
-    blurRadius: 14 * depth,
+    // Segunda vuelta con Ale. Primero pidio suavizar (la sombra iba al 50% y
+    // el brillo casi opaco, muy marcado frente a las maquetas) y se bajo al
+    // 28%. En el telefono eso «casi no se ve»: las tarjetas se confundian con
+    // el fondo. Queda en medio: sombra al 50% pero de un gris azulado mas
+    // claro que el de la primera version, brillo al 90%, y un punto mas de
+    // desplazamiento con algo menos de desenfoque para que el borde de la
+    // tarjeta se lea sin llegar a recortarse.
+    color: dark ? const Color(0x80000000) : const Color(0x80A9AFC6),
+    offset: Offset(4 * depth, 4 * depth),
+    blurRadius: 12 * depth,
   ),
   BoxShadow(
-    color: dark ? const Color(0x2E3A3747) : const Color(0xB3FFFFFF),
-    offset: Offset(-3 * depth, -3 * depth),
-    blurRadius: 14 * depth,
+    color: dark ? const Color(0x47464357) : const Color(0xE6FFFFFF),
+    offset: Offset(-4 * depth, -4 * depth),
+    blurRadius: 12 * depth,
   ),
 ];
 
@@ -326,9 +329,19 @@ class _NeuPrimaryButtonState extends State<NeuPrimaryButton> {
 /// exterior queda del color exacto de la pagina, o sea invisible: pasa por
 /// texto suelto y se pierde que es pulsable. Medido, no supuesto: el
 /// OutlinedButton resolvia a #EBECF2, el mismo neuBackground.
-Color neuRaised(bool dark, Color superficie) => dark
-    ? const Color(0xFF2A2932)
-    : Color.lerp(superficie, Colors.white, .55)!;
+Color neuRaised(bool dark, Color superficie) =>
+    dark ? const Color(0xFF2A2932) : Color.lerp(superficie, Colors.white, .55)!;
+
+/// Tono de la sombra que deja una placa neu bajo si misma.
+///
+/// Va opaco porque la elevacion de Material ya lo atenua al pintarlo; con la
+/// transparencia de [neuShadows] encima quedaba invisible.
+Color neuPlateShadow(bool dark) =>
+    dark ? const Color(0xFF000000) : const Color(0xFF8E96B4);
+
+/// Halo de los controles que llevan el color de resalte.
+Color neuGlow(bool dark) =>
+    dark ? const Color(0xFF8FA8EC) : const Color(0xFF6C63E6);
 
 /// Relieve neu para los botones, servido desde el tema.
 ///
@@ -357,6 +370,7 @@ ButtonStyle neuButtonStyle(
   required Color base,
   List<Color>? gradient,
   Color? ink,
+  Color? glow,
 }) => ButtonStyle(
   foregroundColor: ink == null
       ? null
@@ -371,12 +385,27 @@ ButtonStyle neuButtonStyle(
   backgroundColor: gradient == null
       ? null
       : WidgetStateProperty.resolveWith(
-          (states) => states.contains(WidgetState.disabled)
-              ? null
-              : Colors.transparent,
+          (states) =>
+              states.contains(WidgetState.disabled) ? null : Colors.transparent,
         ),
-  elevation: const WidgetStatePropertyAll(0),
-  shadowColor: const WidgetStatePropertyAll(Colors.transparent),
+  // La sombra exterior que SI cabe en un ButtonStyle: la de Material, que la
+  // pinta el propio boton por fuera de su recorte. Es una sola, hacia abajo,
+  // sin el brillo de arriba; pero con la placa ya mas clara que el fondo
+  // basta para que el boton se despegue de la pagina, que era lo que faltaba:
+  // en el telefono los secundarios se leian planos.
+  //
+  // Con [glow] la sombra se tine de ese color y sube un poco: es el halo leve
+  // de los botones que llevan el color de resalte.
+  elevation: WidgetStateProperty.resolveWith(
+    (states) => states.contains(WidgetState.disabled)
+        ? 0
+        : states.contains(WidgetState.pressed)
+        ? 1
+        : glow != null
+        ? 7
+        : 3,
+  ),
+  shadowColor: WidgetStatePropertyAll(glow ?? neuPlateShadow(dark)),
   shape: WidgetStatePropertyAll(
     RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
   ),

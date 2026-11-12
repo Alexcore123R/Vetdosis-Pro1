@@ -14,6 +14,7 @@ import 'reference_library_screen.dart';
 import '../domain/calculation_catalog.dart';
 import '../domain/calculation_engine.dart';
 import 'calculation_view_model.dart';
+import '../../../vet_ui/vet_icons.dart';
 
 class CalculationScreen extends StatefulWidget {
   const CalculationScreen({
@@ -169,7 +170,7 @@ class _CalculationScreenState extends State<CalculationScreen> {
                   builder: (_) => const AvicultureScreen(),
                 ),
               ),
-              icon: const Icon(Icons.agriculture_outlined),
+              icon: const Icon(VetIcons.stable),
               label: const Text('Aves · Capacidad e instalaciones'),
             ),
           if (widget.showAviculture)
@@ -180,7 +181,7 @@ class _CalculationScreenState extends State<CalculationScreen> {
                   builder: (_) => const IncubationScreen(),
                 ),
               ),
-              icon: const Icon(Icons.egg_outlined),
+              icon: const Icon(VetIcons.egg),
               label: const Text('Aves · Incubación'),
             ),
           const SizedBox(height: 12),
@@ -199,7 +200,7 @@ class _CalculationScreenState extends State<CalculationScreen> {
                       ),
                     ),
                   ),
-                  icon: const Icon(Icons.monitor_heart_outlined),
+                  icon: const Icon(VetIcons.heartPulse),
                   label: const Text('Referencias fisiológicas'),
                 ),
                 OutlinedButton.icon(
@@ -213,7 +214,7 @@ class _CalculationScreenState extends State<CalculationScreen> {
                       ),
                     ),
                   ),
-                  icon: const Icon(Icons.science_outlined),
+                  icon: const Icon(VetIcons.flask),
                   label: const Text('Referencias de laboratorio'),
                 ),
               ],

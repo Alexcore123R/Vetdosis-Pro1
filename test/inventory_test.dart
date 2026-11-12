@@ -10,6 +10,7 @@ import 'package:vetdosis_pro/modules/inventory/domain/inventory_repository.dart'
 import 'package:vetdosis_pro/modules/inventory/presentation/inventory_view_model.dart';
 import 'package:vetdosis_pro/modules/inventory/presentation/inventory_screen.dart';
 import 'package:vetdosis_pro/modules/inventory/presentation/sale_screen.dart';
+import 'package:vetdosis_pro/vet_ui/vet_icons.dart';
 
 const member = ClinicMembership(
   clinicId: 'clinic',
@@ -303,7 +304,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.add_shopping_cart));
+    await tester.tap(find.byIcon(VetIcons.cart));
     await tester.pumpAndSettle();
     await tester.tap(find.byType(DropdownButtonFormField<String>).first);
     await tester.pumpAndSettle();
@@ -359,11 +360,11 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byIcon(Icons.add).first);
+      await tester.tap(find.byIcon(VetIcons.add).first);
       await tester.pump();
-      await tester.tap(find.byIcon(Icons.add).last);
+      await tester.tap(find.byIcon(VetIcons.add).last);
       await tester.pump();
-      await tester.tap(find.byIcon(Icons.add).first);
+      await tester.tap(find.byIcon(VetIcons.add).first);
       await tester.pump();
       expect(find.text('Total a pagar: \$30,00 MXN'), findsOneWidget);
       await tester.ensureVisible(find.byType(CheckboxListTile));
@@ -560,7 +561,7 @@ void main() {
     ).first;
     await tester.tap(find.descendant(
       of: chargeTile,
-      matching: find.byIcon(Icons.add),
+      matching: find.byIcon(VetIcons.add),
     ));
     await tester.pumpAndSettle();
     await tapVisible(tester, find.text('Revisé cantidades de venta, lotes, receta y total a cobrar.'));

@@ -8,6 +8,7 @@ import '../data/personal_dose_repository.dart';
 import '../domain/catalog.dart';
 import 'dose_screen.dart';
 import 'personal_dose_screen.dart';
+import '../../../vet_ui/vet_icons.dart';
 
 class VademecumScreen extends StatefulWidget {
   const VademecumScreen({super.key, required this.catalog, this.personal,
@@ -57,13 +58,13 @@ class _VademecumScreenState extends State<VademecumScreen> {
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Text('Vademécum', style: Theme.of(context).textTheme.headlineMedium),
       const Text('Consulta fuentes y presentaciones antes de calcular.'),
-      OutlinedButton.icon(icon: const Icon(Icons.menu_book),
+      OutlinedButton.icon(icon: const Icon(VetIcons.book),
         label: const Text('Catálogo comercial y dosis del fabricante'),
         onPressed: () => Navigator.push<void>(context, MaterialPageRoute(
           builder: (_) => ManufacturerCatalogScreen(canCalculate: widget.canCalculate)))),
       if (busy) const LinearProgressIndicator(),
       if (error != null) Text(error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-      TextField(decoration: const InputDecoration(labelText: 'Buscar fármaco o nombre comercial', prefixIcon: Icon(Icons.search)),
+      TextField(decoration: const InputDecoration(labelText: 'Buscar fármaco o nombre comercial', prefixIcon: Icon(VetIcons.search)),
         onChanged: (value) => setState(() => query = value)),
       // El filtro pasa de lista desplegable a fila de pastillas, como en el
       // «Vademecum rapido» de las referencias: las cuatro vistas a la vista
@@ -96,7 +97,7 @@ class _VademecumScreenState extends State<VademecumScreen> {
             repository: widget.personal!, clinicId: widget.clinicId!, admin: widget.admin,
             general: catalog?.drugs ?? [])));
           if (mounted) await load();
-        }, icon: const Icon(Icons.add), label: const Text('Agregar ficha personal o solicitar compartirla')),
+        }, icon: const Icon(VetIcons.add), label: const Text('Agregar ficha personal o solicitar compartirla')),
       if (!busy && visible.isEmpty) const Text('Aún no hay fichas en esta vista. Añade una ficha con fuente verificable o importa el catálogo general.'),
       for (final entry in visible)
         // Ficha con barra de color a la izquierda segun de donde viene
@@ -126,7 +127,7 @@ class _VademecumScreenState extends State<VademecumScreen> {
                     repository: widget.catalog, personalRepository: widget.personal,
                     clinicId: widget.clinicId, userId: widget.userId,
                     admin: widget.admin, offline: widget.offline, initialDrug: entry.$1))))),
-                icon: const Icon(Icons.calculate), label: const Text('Calcular dosis')),
+                icon: const Icon(VetIcons.calculator), label: const Text('Calcular dosis')),
           ])),
         ])))),
     ]);

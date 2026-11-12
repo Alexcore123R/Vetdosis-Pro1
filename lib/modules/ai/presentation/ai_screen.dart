@@ -9,6 +9,7 @@ import '../../patients/presentation/patient_view_model.dart'
     show newOperationId;
 import '../domain/ai_repository.dart';
 import 'ai_view_model.dart';
+import '../../../vet_ui/vet_icons.dart';
 
 class AiScreen extends StatefulWidget {
   const AiScreen({
@@ -488,7 +489,7 @@ class _AiScreenState extends State<AiScreen> {
             ),
             IconButton(
               onPressed: working ? null : vm.load,
-              icon: const Icon(Icons.refresh),
+              icon: const Icon(VetIcons.refresh),
             ),
           ],
         ),
@@ -555,7 +556,7 @@ class _AiScreenState extends State<AiScreen> {
                     if (widget.returnDraft && m['role'] == 'assistant')
                       TextButton.icon(
                         onPressed: working ? null : () => Navigator.pop(context, m['body'] as String),
-                        icon: const Icon(Icons.edit_note),
+                        icon: const Icon(VetIcons.noteEdit),
                         label: const Text('Usar como borrador editable'),
                       ),
                   ],

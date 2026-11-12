@@ -26,6 +26,7 @@ import 'inventory_view_model.dart';
 import 'barcode_screen.dart';
 import 'sale_screen.dart';
 import 'workflow_screen.dart';
+import '../../../vet_ui/vet_icons.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({
@@ -941,7 +942,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               if (model.canPrepareOrder || model.canReadFinance)
                 TextButton.icon(
                   onPressed: inventoryIdeas,
-                  icon: const Icon(Icons.auto_awesome),
+                  icon: const Icon(VetIcons.sparkles),
                   label: const Text(
                     'Analizar existencias, caducidades y ventas',
                   ),
@@ -1010,7 +1011,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           ),
                         ),
                       ),
-                icon: const Icon(Icons.payments_outlined),
+                icon: const Icon(VetIcons.coins),
                 label: const Text('Cobros, pagos y referencias externas'),
               ),
 
@@ -1200,7 +1201,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                 ? IconButton(
                                     onPressed: () =>
                                         adjust(Map<String, dynamic>.from(l)),
-                                    icon: const Icon(Icons.edit_note),
+                                    icon: const Icon(VetIcons.noteEdit),
                                   )
                                 : null,
                           ),
@@ -1228,19 +1229,19 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 NeuStatRow(
                   children: [
                     NeuStatTile(
-                      icon: Icons.payments_outlined,
+                      icon: VetIcons.coins,
                       color: VetColors.turquoise,
                       label: 'Ventas netas',
                       value: dayAmount('gross'),
                     ),
                     NeuStatTile(
-                      icon: Icons.receipt_long_outlined,
+                      icon: VetIcons.receipt,
                       color: VetColors.pink,
                       label: 'Gastos en efectivo',
                       value: dayAmount('expense'),
                     ),
                     NeuStatTile(
-                      icon: Icons.account_balance_wallet_outlined,
+                      icon: VetIcons.wallet,
                       color: VetColors.violet,
                       label: 'Resultado capturado',
                       value: dayAmount('recorded_net'),
@@ -1255,19 +1256,19 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 NeuStatRow(
                   children: [
                     NeuStatTile(
-                      icon: Icons.local_atm,
+                      icon: VetIcons.banknote,
                       color: VetColors.turquoise,
                       label: 'Efectivo',
                       value: dayAmount('cash'),
                     ),
                     NeuStatTile(
-                      icon: Icons.credit_card,
+                      icon: VetIcons.creditCard,
                       color: VetColors.brandSky,
                       label: 'Tarjeta',
                       value: dayAmount('card'),
                     ),
                     NeuStatTile(
-                      icon: Icons.swap_horiz,
+                      icon: VetIcons.swapHoriz,
                       color: VetColors.lilac,
                       label: 'Transferencia',
                       value: dayAmount('transfer'),
@@ -1327,7 +1328,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               if (model.canReadFinance)
                 TextButton.icon(
                   onPressed: invoiceRequests,
-                  icon: const Icon(Icons.receipt_long),
+                  icon: const Icon(VetIcons.receipt),
                   label: const Text('Solicitudes de factura'),
                 ),
               if (model.canReadFinance &&

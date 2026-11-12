@@ -381,12 +381,36 @@ class _Plan extends StatelessWidget {
   final String name;
   final String description;
 
+  static const double _radius = 24;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: VetCard(
+      padding: const EdgeInsets.only(bottom: 16),
+      // Cada plan lleva el contorno y un halo leve de su propio color, segun
+      // la referencia de Ale: asi los tres se distinguen de un vistazo y la
+      // lamina de precios no es una pila de tarjetas iguales. El contorno va
+      // en primer plano para no mover el contenido de la tarjeta.
+      child: DecoratedBox(
+        position: DecorationPosition.foreground,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(_radius),
+          border: Border.all(color: accent.withValues(alpha: .7), width: 1.4),
+        ),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(_radius),
+            boxShadow: [
+              BoxShadow(
+                color: accent.withValues(alpha: .34),
+                blurRadius: 18,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: VetCard(
+        radius: _radius,
         child: Row(
           children: [
             VetIconBox(icon: icon, accent: accent),
@@ -412,6 +436,8 @@ class _Plan extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
         ),
       ),
     );

@@ -329,9 +329,19 @@ class _NeuPrimaryButtonState extends State<NeuPrimaryButton> {
 /// exterior queda del color exacto de la pagina, o sea invisible: pasa por
 /// texto suelto y se pierde que es pulsable. Medido, no supuesto: el
 /// OutlinedButton resolvia a #EBECF2, el mismo neuBackground.
-Color neuRaised(bool dark, Color superficie) => dark
-    ? const Color(0xFF2A2932)
-    : Color.lerp(superficie, Colors.white, .55)!;
+Color neuRaised(bool dark, Color superficie) =>
+    dark ? const Color(0xFF2A2932) : Color.lerp(superficie, Colors.white, .55)!;
+
+/// Tono de la sombra que deja una placa neu bajo si misma.
+///
+/// Va opaco porque la elevacion de Material ya lo atenua al pintarlo; con la
+/// transparencia de [neuShadows] encima quedaba invisible.
+Color neuPlateShadow(bool dark) =>
+    dark ? const Color(0xFF000000) : const Color(0xFF8E96B4);
+
+/// Halo de los controles que llevan el color de resalte.
+Color neuGlow(bool dark) =>
+    dark ? const Color(0xFF8FA8EC) : const Color(0xFF6C63E6);
 
 /// Relieve neu para los botones, servido desde el tema.
 ///
@@ -360,6 +370,7 @@ ButtonStyle neuButtonStyle(
   required Color base,
   List<Color>? gradient,
   Color? ink,
+  Color? glow,
 }) => ButtonStyle(
   foregroundColor: ink == null
       ? null
@@ -374,12 +385,27 @@ ButtonStyle neuButtonStyle(
   backgroundColor: gradient == null
       ? null
       : WidgetStateProperty.resolveWith(
-          (states) => states.contains(WidgetState.disabled)
-              ? null
-              : Colors.transparent,
+          (states) =>
+              states.contains(WidgetState.disabled) ? null : Colors.transparent,
         ),
-  elevation: const WidgetStatePropertyAll(0),
-  shadowColor: const WidgetStatePropertyAll(Colors.transparent),
+  // La sombra exterior que SI cabe en un ButtonStyle: la de Material, que la
+  // pinta el propio boton por fuera de su recorte. Es una sola, hacia abajo,
+  // sin el brillo de arriba; pero con la placa ya mas clara que el fondo
+  // basta para que el boton se despegue de la pagina, que era lo que faltaba:
+  // en el telefono los secundarios se leian planos.
+  //
+  // Con [glow] la sombra se tine de ese color y sube un poco: es el halo leve
+  // de los botones que llevan el color de resalte.
+  elevation: WidgetStateProperty.resolveWith(
+    (states) => states.contains(WidgetState.disabled)
+        ? 0
+        : states.contains(WidgetState.pressed)
+        ? 1
+        : glow != null
+        ? 7
+        : 3,
+  ),
+  shadowColor: WidgetStatePropertyAll(glow ?? neuPlateShadow(dark)),
   shape: WidgetStatePropertyAll(
     RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
   ),

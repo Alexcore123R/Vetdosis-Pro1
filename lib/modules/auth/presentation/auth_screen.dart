@@ -397,6 +397,15 @@ class _ClinicAccountScreenState extends State<ClinicAccountScreen> {
         body: ListView(
           padding: const EdgeInsets.all(24),
           children: [
+            // Todo el panel iba sin separacion: campo, selector y boton
+            // pegados, y en el telefono la etiqueta flotante del selector de
+            // rol se montaba sobre el campo del correo. La separacion la pone
+            // la columna, una sola vez, en vez de un SizedBox entre cada par
+            // que el proximo control agregado volveria a olvidar.
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: 12,
+              children: [
             if (widget.identityBuilder != null)
               widget.identityBuilder!(context),
             if (model.personalAvailable)
@@ -517,6 +526,7 @@ class _ClinicAccountScreenState extends State<ClinicAccountScreen> {
             if (!model.offline)
               ExpansionTile(
                 title: const Text('Agregar otra clínica'),
+                childrenPadding: const EdgeInsets.only(top: 4, bottom: 12),
                 children: [
                   TextField(
                     controller: _clinicName,
@@ -524,6 +534,7 @@ class _ClinicAccountScreenState extends State<ClinicAccountScreen> {
                       labelText: 'Nombre de la nueva clínica',
                     ),
                   ),
+                  const SizedBox(height: 12),
                   FilledButton(
                     onPressed: model.busy
                         ? null
@@ -535,6 +546,7 @@ class _ClinicAccountScreenState extends State<ClinicAccountScreen> {
                           },
                     child: const Text('Crear clínica'),
                   ),
+                  const SizedBox(height: 12),
                   TextField(
                     controller: _inviteCode,
                     autocorrect: false,
@@ -542,6 +554,7 @@ class _ClinicAccountScreenState extends State<ClinicAccountScreen> {
                       labelText: 'Código de invitación',
                     ),
                   ),
+                  const SizedBox(height: 12),
                   OutlinedButton(
                     onPressed: model.busy
                         ? null
@@ -568,6 +581,8 @@ class _ClinicAccountScreenState extends State<ClinicAccountScreen> {
                       if (context.mounted) Navigator.pop(context);
                     },
               child: const Text('Cerrar sesión'),
+            ),
+              ],
             ),
           ],
         ),

@@ -97,6 +97,7 @@ Future<void> _shot(WidgetTester tester, GlobalKey key, String name) async {
       'assets/brand/app-icon-transparent.png',
       // El video no corre en pruebas: la bienvenida se ve con su poster.
       'assets/brand/welcome_intro_poster.webp',
+      'assets/brand/welcome_intro_dark_poster.webp',
     ]) {
       await precacheImage(AssetImage(asset), key.currentContext!);
     }

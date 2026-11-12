@@ -18,6 +18,16 @@ class WelcomeIntroVideo extends StatefulWidget {
   static const asset = 'assets/brand/welcome_intro.mp4';
   static const posterAsset = 'assets/brand/welcome_intro_poster.webp';
 
+  /// Variante para el tema oscuro: misma animacion y mismo encuadre sobre
+  /// fondo oscuro, para que no sea un rectangulo claro en mitad de la noche.
+  static const darkAsset = 'assets/brand/welcome_intro_dark.mp4';
+  static const darkPosterAsset = 'assets/brand/welcome_intro_dark_poster.webp';
+
+  static String assetFor(Brightness brightness) =>
+      brightness == Brightness.dark ? darkAsset : asset;
+  static String posterFor(Brightness brightness) =>
+      brightness == Brightness.dark ? darkPosterAsset : posterAsset;
+
   /// Proporcion del video (720 x 1280).
   static const videoAspect = 720 / 1280;
 
@@ -41,21 +51,29 @@ class WelcomeIntroVideo extends StatefulWidget {
 class _WelcomeIntroVideoState extends State<WelcomeIntroVideo> {
   VideoPlayerController? _controller;
   bool _ready = false;
-  bool _started = false;
+  Brightness? _startedFor;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // La preferencia de movimiento reducido del sistema solo se puede leer con
-    // un contexto, por eso el arranque no va en initState.
-    if (_started) return;
-    _started = true;
+    // La preferencia de movimiento reducido del sistema y el tema solo se
+    // pueden leer con un contexto, por eso el arranque no va en initState.
+    // Si el tema cambia con la pantalla abierta se cambia de video.
+    final brightness = Theme.of(context).brightness;
+    if (_startedFor == brightness) return;
+    final previous = _controller;
+    _controller = null;
+    _ready = false;
+    _startedFor = brightness;
+    previous?.dispose();
     if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) return;
-    _start();
+    _start(brightness);
   }
 
-  Future<void> _start() async {
-    final controller = VideoPlayerController.asset(WelcomeIntroVideo.asset);
+  Future<void> _start(Brightness brightness) async {
+    final controller = VideoPlayerController.asset(
+      WelcomeIntroVideo.assetFor(brightness),
+    );
     _controller = controller;
     try {
       await controller.initialize();
@@ -65,19 +83,17 @@ class _WelcomeIntroVideoState extends State<WelcomeIntroVideo> {
     } catch (_) {
       // Sin vídeo la bienvenida sigue en pie con el póster.
       await controller.dispose();
-      if (!mounted) {
-        _controller = null;
-        return;
-      }
+      // Si mientras tanto cambio el tema, ya hay otro video en marcha: este
+      // no debe tocar su estado.
+      if (!mounted || _controller != controller) return;
       setState(() {
         _controller = null;
         _ready = false;
       });
       return;
     }
-    if (!mounted) {
+    if (!mounted || _controller != controller) {
       await controller.dispose();
-      _controller = null;
       return;
     }
     setState(() => _ready = true);
@@ -126,13 +142,15 @@ class _WelcomeIntroVideoState extends State<WelcomeIntroVideo> {
             child: SizedBox(
               width: width,
               height: height,
-              child: _Frame(
+              child: _EdgeFade(
                 child: ClipRect(
                   child: Stack(
                     children: [
                       framed(
                         Image.asset(
-                          WelcomeIntroVideo.posterAsset,
+                          WelcomeIntroVideo.posterFor(
+                            Theme.of(context).brightness,
+                          ),
                           fit: BoxFit.fill,
                           errorBuilder: (_, _, _) => const SizedBox.shrink(),
                         ),
@@ -151,30 +169,14 @@ class _WelcomeIntroVideoState extends State<WelcomeIntroVideo> {
   }
 }
 
-/// Marco del video segun el tema.
-///
-/// En claro los bordes se desvanecen. En oscuro no: el video es claro, y un
-/// rectangulo claro de bordes borrosos sobre fondo oscuro se ve como una
-/// mancha de luz. Ahi conserva el recuadro de esquinas redondas.
-class _Frame extends StatelessWidget {
-  const _Frame({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark
-      ? ClipRRect(borderRadius: BorderRadius.circular(28), child: child)
-      : _EdgeFade(child: child);
-}
-
 /// Desvanece los cuatro bordes de [child] hasta transparente.
 ///
 /// El video trae su propio fondo, parecido al de la pantalla pero no igual, y
 /// en un recuadro de esquinas redondas se veia como una foto pegada encima.
 /// Con los bordes en transparente lo que asoma es el fondo real de la
-/// pantalla, sea el velo de Neu, el clasico o el oscuro, sin tener que
-/// igualar colores a mano.
+/// pantalla, sea el velo de Neu o el clasico, sin tener que igualar colores a
+/// mano. En oscuro funciona porque hay un video oscuro: con el claro encima
+/// de fondo oscuro el difuminado se veia como una mancha de luz.
 class _EdgeFade extends StatelessWidget {
   const _EdgeFade({required this.child});
 

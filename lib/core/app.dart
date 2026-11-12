@@ -412,6 +412,7 @@ class VetDosisApp extends StatelessWidget {
                 base: scheme.primary,
                 gradient: neuActionGradient(dark),
                 ink: neuActionInk(dark),
+                glow: neuGlow(dark),
               ),
             )
           : null,
@@ -472,13 +473,16 @@ class VetDosisApp extends StatelessWidget {
             )
           : null,
       navigationBarTheme: neumorphic
-          // La pestana activa es una placa clara redondeada con su
-          // etiqueta en el color primario, no la pildora de Material.
+          // La pestana activa se rellena con el color de resalte en
+          // translucido y lleva un halo leve del mismo tono, segun la
+          // referencia de Ale. Antes era una placa clara casi del color de
+          // la barra: en el telefono costaba ver cual estaba elegida.
           ? NavigationBarThemeData(
               backgroundColor: surface,
-              indicatorColor: neuRaised(dark, surface),
-              indicatorShape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+              indicatorColor: primary.withValues(alpha: dark ? .26 : .18),
+              indicatorShape: GlowRoundedBorder(
+                glow: primary.withValues(alpha: dark ? .42 : .34),
+                borderRadius: BorderRadius.circular(18),
               ),
               elevation: 0,
             )

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vetdosis_pro/modules/welcome/presentation/public_welcome_screen.dart';
@@ -54,5 +56,18 @@ void main() {
       const Offset(0, -200),
     );
     expect(find.text('5'), findsOneWidget);
+  });
+
+  test('Cada tema tiene su video y su poster, y los archivos existen', () {
+    for (final brightness in Brightness.values) {
+      final video = WelcomeIntroVideo.assetFor(brightness);
+      final poster = WelcomeIntroVideo.posterFor(brightness);
+      expect(File(video).existsSync(), isTrue, reason: video);
+      expect(File(poster).existsSync(), isTrue, reason: poster);
+    }
+    expect(
+      WelcomeIntroVideo.assetFor(Brightness.dark),
+      isNot(WelcomeIntroVideo.assetFor(Brightness.light)),
+    );
   });
 }

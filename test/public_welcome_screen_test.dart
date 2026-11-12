@@ -48,7 +48,11 @@ void main() {
         findsOneWidget);
     // Los planes conservan su lista y debajo llevan el mismo resumen
     // numerado que la lamina anterior.
-    await tester.scrollUntilVisible(find.text('IA que asiste, no decide'), 200);
+    await tester.dragUntilVisible(
+      find.text('IA que asiste, no decide'),
+      find.byType(ListView).last,
+      const Offset(0, -200),
+    );
     expect(find.text('5'), findsOneWidget);
   });
 }

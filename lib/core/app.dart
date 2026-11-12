@@ -9,6 +9,8 @@ import '../modules/clinic_experience/domain/clinic_experience_repository.dart';
 import '../modules/clinic_experience/presentation/clinic_experience_boundary.dart';
 import '../modules/clinic_experience/presentation/clinic_experience_screen.dart';
 import '../modules/auth/presentation/team_duty_screen.dart';
+import '../modules/notifications/data/inbox_source.dart';
+import '../modules/notifications/presentation/notification_bell_menu.dart';
 import '../modules/review/domain/review_catalog_repository.dart';
 import '../modules/review/presentation/review_catalog_screen.dart';
 import '../modules/auth/domain/auth_repository.dart';
@@ -251,6 +253,7 @@ class VetDosisApp extends StatelessWidget {
     this.moduleAccess,
     this.experienceRepository,
     this.reviewCatalog,
+    this.inboxSeenStore,
   });
   final CoreViewModel model;
   final AuthViewModel? auth;
@@ -277,6 +280,10 @@ class VetDosisApp extends StatelessWidget {
   final ModuleAccessRepository? moduleAccess;
   final ClinicExperienceRepository? experienceRepository;
   final ReviewCatalogRepository? reviewCatalog;
+
+  /// Donde se guarda hasta donde vio la persona la campana. Null usa el
+  /// almacen del telefono; las pruebas pasan uno en memoria.
+  final InboxSeenStore? inboxSeenStore;
   ThemeData theme(Brightness brightness) {
     final dark = brightness == Brightness.dark;
     final neumorphic = model.settings.visualStyle == 'neu';
@@ -591,6 +598,7 @@ class VetDosisApp extends StatelessWidget {
               moduleAccess: access,
               moduleAccessRepository: moduleAccess,
               reviewCatalog: reviewCatalog,
+              inboxSeenStore: inboxSeenStore,
               personalDoses: personalDoses,
               patients: patients,
               hospital: hospital,
@@ -650,6 +658,7 @@ class CoreShell extends StatelessWidget {
     this.experienceReady = false,
     this.onExperienceSaved,
     this.reviewCatalog,
+    this.inboxSeenStore,
   });
   final CoreViewModel model;
   final AuthViewModel? auth;
@@ -678,6 +687,10 @@ class CoreShell extends StatelessWidget {
   final bool experienceReady;
   final Future<void> Function()? onExperienceSaved;
   final ReviewCatalogRepository? reviewCatalog;
+
+  /// Donde se guarda hasta donde vio la persona la campana. Null usa el
+  /// almacen del telefono; las pruebas pasan uno en memoria.
+  final InboxSeenStore? inboxSeenStore;
 
   /// Whether [member] still matches an online session allowed hospital access.
   bool hospitalWeightContext(ClinicMembership member) =>
@@ -1032,19 +1045,46 @@ class CoreShell extends StatelessWidget {
               ),
               onPressed: () => openAccount(context),
             ),
-          // El asistente bajo a la barra inferior; este hueco pasa a los
-          // avisos. OJO: esta rama no tiene una pantalla de «Notificaciones»
-          // propia, asi que apunta a «Anuncios y avisos», que es lo mas
-          // cercano que si existe y es navegable. Si se fusiona
-          // feature/notificaciones-personales, el destino es esa.
+          // El asistente bajo a la barra inferior; este hueco es la campana.
+          // Despliega las notificaciones personales recientes (anuncios,
+          // mensajes, tareas asignadas y cambios a sus turnos) con un
+          // marcador de nuevas; «Anuncios y avisos» queda al pie del menu.
           if (showsNoticesAction)
-            IconButton(
-              tooltip: 'Anuncios y avisos',
-              onPressed: () => model.navigate('Anuncios y avisos'),
+            NotificationBellMenu(
+              key: ValueKey(
+                'bell:${auth!.active!.userId}:${auth!.active!.clinicId}',
+              ),
+              source: TeamInboxSource(
+                operations: operations,
+                duty: auth!.repository is TeamDutyRepository
+                    ? auth!.repository as TeamDutyRepository
+                    : null,
+              ),
+              seenStore: inboxSeenStore ?? const PrefsInboxSeenStore(),
+              clinicId: auth!.active!.clinicId,
+              userId: auth!.active!.userId,
+              refreshKey: model.screen,
+              onOpenAll: () => model.navigate('Anuncios y avisos'),
+              onOpenItem: (item) {
+                final route = item.route;
+                if (route != null) {
+                  model.navigate(route);
+                } else if (auth!.repository is TeamDutyRepository) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => TeamDutyScreen(
+                        model: auth!,
+                        clinic: auth!.active!,
+                      ),
+                    ),
+                  );
+                }
+              },
               // Sobre la banda el degradado del icono se perderia: en Neu
               // va dentro de una placa del color del lienzo, como los
               // botones de cabecera de las referencias.
-              icon: _neu(context)
+              iconBuilder: (context, _) => _neu(context)
                   ? Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(

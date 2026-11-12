@@ -935,9 +935,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
           Wrap(
             spacing: 8,
             children: [
-              TextButton(
+              TextButton.icon(
                 onPressed: model.busy ? null : model.load,
-                child: const Text('Actualizar'),
+                icon: const Icon(VetIcons.refresh),
+                label: const Text('Actualizar'),
               ),
               if (model.canPrepareOrder || model.canReadFinance)
                 TextButton.icon(
@@ -948,7 +949,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   ),
                 ),
               if (model.canManage)
-                TextButton(
+                TextButton.icon(
+                  icon: const Icon(VetIcons.clock),
                   onPressed: model.busy
                       ? null
                       : () => entry(
@@ -972,14 +974,15 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                 'America/Mexico_City',
                           },
                         ),
-                  child: const Text('Zona horaria'),
+                  label: const Text('Zona horaria'),
                 ),
             ],
           ),
           if (model.busy) const LinearProgressIndicator(),
           if (model.error != null) Text(model.error!),
           if (model.dashboard != null) ...[
-            TextButton(
+            TextButton.icon(
+              icon: const Icon(VetIcons.truck),
               onPressed: () async {
                 await Navigator.push<void>(
                   context,
@@ -993,7 +996,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 );
                 if (mounted) await model.load();
               },
-              child: const Text('Entregas, aplicaciones y permisos'),
+              label: const Text('Entregas, aplicaciones y permisos'),
             ),
             if (!model.managementKnown ||
                 model.canCollect ||

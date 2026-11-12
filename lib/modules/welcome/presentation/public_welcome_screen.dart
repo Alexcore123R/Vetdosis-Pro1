@@ -5,6 +5,7 @@ import '../../../vet_ui/vet_components.dart';
 import '../../../vet_ui/vet_theme.dart';
 import '../../auth/presentation/auth_screen.dart';
 import '../../auth/presentation/auth_view_model.dart';
+import 'clinic_highlights.dart';
 import 'welcome_intro_video.dart';
 import '../../../vet_ui/vet_icons.dart';
 
@@ -210,44 +211,8 @@ class _PublicWelcomeScreenState extends State<PublicWelcomeScreen> {
     ),
     const SizedBox(height: 18),
     const _GroupLabel('Administración clínica'),
-    const _FeatureCard(
-      icon: VetIcons.calculator,
-      accent: VetColors.turquoise,
-      title: 'Cálculos con criterio',
-      description: 'Dosis por especie y por kg, fluidoterapia y productos '
-          'comerciales. Vademécum con fuentes. Tú validas, la app te ahorra '
-          'el error.',
-    ),
-    const _FeatureCard(
-      icon: VetIcons.clipboardList,
-      accent: VetColors.violet,
-      title: 'Pacientes y hospitalización',
-      description: 'Expedientes, agenda, recetas y consentimientos en PDF. '
-          'Seguimiento de hospitalizados con recordatorios.',
-    ),
-    const _FeatureCard(
-      icon: VetIcons.box,
-      accent: VetColors.lilac,
-      title: 'Inventario y caja',
-      description: 'Escáner de códigos y lectura de etiquetas. Ventas, '
-          'crédito, abonos y promociones.',
-    ),
-    const _FeatureCard(
-      icon: VetIcons.chartGrowth,
-      accent: VetColors.purple,
-      title: 'Tu clínica como negocio',
-      description: 'Dashboard, planeación financiera en pesos, punto de '
-          'equilibrio. Equipo con permisos, asistencia, horarios, mensajes, '
-          'avisos, tablón de notas y comisiones.',
-    ),
-    const _FeatureCard(
-      icon: VetIcons.sparkles,
-      accent: VetColors.lavender,
-      title: 'IA que asiste, no decide',
-      description: 'Borradores, dictado por voz y lectura de etiquetas. '
-          'Siempre con tu revisión profesional.',
-    ),
-    const SizedBox(height: 18),
+    const ClinicHighlights(),
+    const SizedBox(height: 4),
     const _GroupLabel('Próximamente'),
     const _SoonList([
       'Trabajo sin conexión',
@@ -287,6 +252,9 @@ class _PublicWelcomeScreenState extends State<PublicWelcomeScreen> {
       text: 'Beta cerrada. Planes y precios por anunciar.',
       icon: VetIcons.lock,
     ),
+    const SizedBox(height: 22),
+    const _GroupLabel('Administración clínica'),
+    const ClinicHighlights(),
     const SizedBox(height: 16),
   ];
 }

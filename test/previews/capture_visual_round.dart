@@ -68,7 +68,9 @@ Future<void> _fonts() async {
   )..addFont(rootBundle.load('assets/fonts/DejaVuSans.ttf'))).load();
   final jakarta = FontLoader('PlusJakartaSans');
   for (final weight in const [400, 500, 600, 700, 800]) {
-    jakarta.addFont(rootBundle.load('assets/fonts/PlusJakartaSans-$weight.ttf'));
+    jakarta.addFont(
+      rootBundle.load('assets/fonts/PlusJakartaSans-$weight.ttf'),
+    );
   }
   await jakarta.load();
   await (FontLoader(
@@ -93,6 +95,8 @@ Future<void> _shot(WidgetTester tester, GlobalKey key, String name) async {
     for (final asset in const [
       'assets/brand/vetdosis-logo.png',
       'assets/brand/app-icon-transparent.png',
+      // El video no corre en pruebas: la bienvenida se ve con su poster.
+      'assets/brand/welcome_intro_poster.webp',
     ]) {
       await precacheImage(AssetImage(asset), key.currentContext!);
     }
@@ -237,6 +241,15 @@ void main() {
         );
         await _settle(tester);
         await _shot(tester, key, 'bienvenida-$tone');
+        // Las otras dos laminas son listas largas: se alarga la pantalla para
+        // que quepan enteras en la captura.
+        tester.view.physicalSize = const Size(390, 1500);
+        for (final lamina in const ['incluye', 'planes']) {
+          await tester.tap(find.text('Siguiente'));
+          await _settle(tester);
+          await _shot(tester, key, 'bienvenida-$lamina-$tone');
+        }
+        tester.view.physicalSize = const Size(390, 844);
         final app = tester.widget<VetDosisApp>(find.byType(VetDosisApp));
         await tester.pumpWidget(
           RepaintBoundary(

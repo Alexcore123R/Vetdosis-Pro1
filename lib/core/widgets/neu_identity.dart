@@ -14,18 +14,21 @@ const neuLilac = Color(0xFFC5A8EF);
 /// levantar una tarjeta sin recalcular los desplazamientos.
 List<BoxShadow> neuShadows(bool dark, {double depth = 1}) => [
   BoxShadow(
-    // Por indicacion de Ale el relieve va mas suave: antes la sombra iba al
-    // 50% y el brillo casi opaco, y el resultado quedaba muy marcado frente
-    // a las maquetas. Se baja la opacidad y se acorta el desplazamiento; el
-    // desenfoque se mantiene ancho para que difumine en vez de recortar.
-    color: dark ? const Color(0x59000000) : const Color(0x47B8BDCE),
-    offset: Offset(3 * depth, 3 * depth),
-    blurRadius: 14 * depth,
+    // Segunda vuelta con Ale. Primero pidio suavizar (la sombra iba al 50% y
+    // el brillo casi opaco, muy marcado frente a las maquetas) y se bajo al
+    // 28%. En el telefono eso «casi no se ve»: las tarjetas se confundian con
+    // el fondo. Queda en medio: sombra al 50% pero de un gris azulado mas
+    // claro que el de la primera version, brillo al 90%, y un punto mas de
+    // desplazamiento con algo menos de desenfoque para que el borde de la
+    // tarjeta se lea sin llegar a recortarse.
+    color: dark ? const Color(0x80000000) : const Color(0x80A9AFC6),
+    offset: Offset(4 * depth, 4 * depth),
+    blurRadius: 12 * depth,
   ),
   BoxShadow(
-    color: dark ? const Color(0x2E3A3747) : const Color(0xB3FFFFFF),
-    offset: Offset(-3 * depth, -3 * depth),
-    blurRadius: 14 * depth,
+    color: dark ? const Color(0x47464357) : const Color(0xE6FFFFFF),
+    offset: Offset(-4 * depth, -4 * depth),
+    blurRadius: 12 * depth,
   ),
 ];
 

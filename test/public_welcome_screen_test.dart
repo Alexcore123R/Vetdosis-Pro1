@@ -46,5 +46,9 @@ void main() {
     expect(find.text('Planes'), findsOneWidget);
     expect(find.text('Beta cerrada. Planes y precios por anunciar.'),
         findsOneWidget);
+    // Los planes conservan su lista y debajo llevan el mismo resumen
+    // numerado que la lamina anterior.
+    await tester.scrollUntilVisible(find.text('IA que asiste, no decide'), 200);
+    expect(find.text('5'), findsOneWidget);
   });
 }

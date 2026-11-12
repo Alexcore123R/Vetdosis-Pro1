@@ -91,7 +91,14 @@ def main():
     fb.setupGlyphOrder(order)
     fb.setupCharacterMap({codes[n]: n for n in names})
     fb.setupGlyf(glyphs)
-    fb.setupHorizontalMetrics({g: (EM, 0) for g in order})
+    # El margen izquierdo declarado debe ser el xMin real del glifo. Con 0,
+    # el motor de texto desplaza el dibujo hasta pegarlo al borde y todos los
+    # iconos salen corridos unas 2 unidades de 24 hacia la izquierda.
+    glyf = fb.font['glyf']
+    fb.setupHorizontalMetrics({
+        g: (EM, getattr(glyf[g], 'xMin', 0) if glyf[g].numberOfContours else 0)
+        for g in order
+    })
     fb.setupHorizontalHeader(ascent=EM, descent=0)
     fb.setupNameTable({'familyName': 'VetIcons', 'styleName': 'Regular'})
     fb.setupOS2(sTypoAscender=EM, sTypoDescender=0, sTypoLineGap=0,
